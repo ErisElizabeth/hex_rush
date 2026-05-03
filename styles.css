@@ -1,7 +1,7 @@
 /*
-  Hex Rush V5.0
+  Hex Rush V6.2
   2026 eriselizabeth.com
-  Updated: 2026-05-03 14:00:17 -04:00
+  Updated: 2026-05-03 15:15:54 -04:00
 
   Styling for the game page. The goal here is "clean arcade screen" without
   needing a whole design system. I am still learning, so these sections are
@@ -39,6 +39,39 @@
   dark honeycomb hex patern gets drawn in the canvas by game.js
   background #0A0A0A boarders #303030
   play/play again buttons are #252525
+
+  V5.1 note:
+  changed center score to #d9d9d9
+  eliminated "score" "best" and "Pause" (you're in or you're out, lol)
+  eliminate "game over" the center score becomes #f5f5f5
+  added a 20% zoom on center score upon a loss
+  added high score: [high_score] below the score on the loss screen, 50% size of actual score
+  moved "Again?" button lower
+  eliminated capital letters throughout the whole thing
+  increased background hexagon size by 300%
+
+  V5.2 note:
+  upon restarting the game from the "loss" screen
+  the cursor dipped down to the bottom of the screen
+  patched the error by restarting in the middle of the screen
+
+  V6.0 note:
+  added red circles that slow game play down 25% very 1 for every 22 red hexagon
+  gameplay speeds back up as before from the new point
+  circle hitbox is 50% size of collector hex
+
+  V6.1 note:
+  changed red circles to dark circles
+  collecttor hexagon spin is increasing too fast, reduced to 7% of before
+  changed entrence screen text to collect dark hexagons / avoid red ones
+  changed all font to Garamond for shits and giggles
+  increased frequency of circles from 1:22 to 1:14
+  dialed down the speed up by 335%
+
+  V6.2 note:
+  the 35% decrease was a mistake, fixing it
+  forced mobile devices into landscape (trust me)
+  passive score starts after 1 second, then keeps ticking faster
 */
 
 :root {
@@ -62,7 +95,7 @@ body {
   margin: 0;
   overflow: hidden;
   background: var(--bg);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: Garamond, "Times New Roman", serif;
   color: var(--ink);
 }
 
@@ -101,72 +134,47 @@ button:focus-visible {
   touch-action: none;
 }
 
-.center-score {
+.center-score-wrap {
   position: absolute;
   inset: 0;
   z-index: 1;
   display: grid;
   place-items: center;
-  color: #8A8A8A;
-  font-size: clamp(5rem, 24vw, 18rem);
-  font-weight: 900;
-  line-height: 1;
-  opacity: 0.18;
+  align-content: center;
+  gap: 6px;
+  color: #d9d9d9;
   pointer-events: none;
   user-select: none;
 }
 
-.hud {
-  /* Keep score visible, but let the canvas still receive touches/clicks. */
-  position: absolute;
-  top: max(12px, env(safe-area-inset-top));
-  left: max(12px, env(safe-area-inset-left));
-  right: max(12px, env(safe-area-inset-right));
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  pointer-events: none;
-}
-
-.hud > div,
-.hud button {
-  min-height: 44px;
-  border: 1px solid var(--line);
-  background: var(--panel);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
-}
-
-.hud > div {
-  display: grid;
-  min-width: 86px;
-  padding: 7px 12px;
-  border-radius: 6px;
-}
-
-.hud button {
-  width: 44px;
-  margin-left: auto;
-  font-weight: 800;
+.center-score {
+  font-size: clamp(5rem, 24vw, 18rem);
+  font-weight: 900;
   line-height: 1;
-  pointer-events: auto;
+  opacity: 0.16;
+  transition: color 180ms ease, opacity 180ms ease, transform 260ms ease;
 }
 
-.label {
-  color: var(--muted);
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.high-score {
+  color: #f5f5f5;
+  font-size: clamp(2.5rem, 12vw, 9rem);
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0.34;
 }
 
-.hud strong {
-  font-size: 1.15rem;
-  line-height: 1.05;
+.game-shell.is-lost .center-score {
+  color: #f5f5f5;
+  opacity: 0.34;
+  transform: scale(1.2);
+}
+
+.game-shell.is-lost .center-score-wrap {
+  z-index: 4;
 }
 
 .overlay {
-  /* Used for start, pause, and game over. One overlay, three jobs. */
+  /* Used for start and again. V5.1 says you're in or you're out, lol. */
   position: absolute;
   inset: 0;
   z-index: 3;
@@ -180,6 +188,19 @@ button:focus-visible {
 }
 
 .overlay[hidden] {
+  display: none;
+}
+
+.game-shell.is-lost .overlay {
+  place-content: end center;
+  z-index: 3;
+  padding-bottom: max(42px, 12vh);
+  background: rgba(5, 5, 5, 0.58);
+  backdrop-filter: blur(8px) saturate(0.55);
+}
+
+.game-shell.is-lost .overlay h1,
+.game-shell.is-lost .overlay p {
   display: none;
 }
 
@@ -207,6 +228,11 @@ button:focus-visible {
   border-color: transparent;
   color: #f3f5f8;
   font-weight: 800;
+  text-transform: lowercase;
+}
+
+.rotate-device {
+  display: none;
 }
 
 @media (max-width: 520px) {
@@ -214,12 +240,23 @@ button:focus-visible {
     min-height: 100svh;
   }
 
-  .hud {
-    gap: 8px;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .rotate-device {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-items: center;
+    background: #0A0A0A;
+    color: #f5f5f5;
+    text-align: center;
   }
 
-  .hud > div {
-    min-width: 76px;
-    padding-inline: 10px;
+  .rotate-device p {
+    margin: 0;
+    font-size: clamp(3rem, 20vw, 8rem);
+    line-height: 1;
   }
 }

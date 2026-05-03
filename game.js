@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V5.0
+    Hex Rush V6.2
     2026 eriselizabeth.com
-    Updated: 2026-05-03 14:00:17 -04:00
+    Updated: 2026-05-03 15:15:54 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -56,16 +56,50 @@
     - background #0A0A0A boarders #303030
     - change colors on "play" button and "play again" buttons to #252525
     - changed "play again" to "Again?"
+
+    V5.1 changes:
+    - changed center score to #d9d9d9
+    - eliminated "score" "best" and "Pause" (you're in or you're out, lol)
+    - eliminate "game over" the center score becomes #f5f5f5
+    - added a 20% zoom on center score upon a loss
+    - added high score: [high_score] below the score on the loss screen, 50% size of actual score
+    - moved "Again?" button lower
+    - eliminated capital letters throughout the whole thing
+    - increased background hexagon size by 300%
+
+    V5.2 changes:
+    - upon restarting the game from the "loss" screen
+    - the cursor dipped down to the bottom of the screen
+    - patched the error by restarting in the middle of the screen
+
+    V6.0 changes:
+    - added red circles that slow game play down 25% very 1 for every 22 red hexagon
+    - gameplay speeds back up as before from the new point
+    - circle hitbox is 50% size of collector hex
+
+    V6.1 changes:
+    - changed red circles to dark circles
+    - collecttor hexagon spin is increasing too fast, reduced to 7% of before
+    - changed entrence screen text to collect dark hexagons / avoid red ones
+    - changed all font to Garamond for shits and giggles
+    - increased frequency of circles from 1:22 to 1:14
+    - dialed down the speed up by 335%
+
+    V6.2 changes:
+    - the 35% decrease was a mistake, fixing it
+    - forced mobile devices into landscape (trust me)
+    - from the first second of game play, in addition to collecting hexagons, the score automatically goes up 1 point
+    - then another point every 5 secons after that
+    - increase speed of that score going up by 10% for every 100 poins scored
   */
 
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
-  const scoreNode = document.getElementById("score");
+  const gameShell = document.querySelector(".game-shell");
   const centerScoreNode = document.getElementById("centerScore");
-  const bestNode = document.getElementById("best");
+  const highScoreNode = document.getElementById("highScore");
   const overlay = document.getElementById("overlay");
   const startButton = document.getElementById("startButton");
-  const pauseButton = document.getElementById("pauseButton");
   const introAudio = document.getElementById("introAudio");
   const loopAudio = document.getElementById("loopAudio");
   const introLostAudio = document.getElementById("introLostAudio");
@@ -74,6 +108,13 @@
 
   const STORAGE_KEY = "hex-rush-best";
   const TAU = Math.PI * 2;
+  const SPIN_SCALE = 0.07;
+  const SPEED_RAMP_SCALE = 1;
+  const SLOW_CIRCLE_FREQUENCY = 14;
+  const PASSIVE_SCORE_START = 1;
+  const PASSIVE_SCORE_INTERVAL = 5;
+  const PASSIVE_SCORE_SPEEDUP = 0.9;
+  let lastButtonPointerType = "mouse";
 
   // Everything the game needs to remember lives here so I can find it again.
   const state = {
@@ -86,19 +127,23 @@
     score: 0,
     best: Number(localStorage.getItem(STORAGE_KEY) || 0),
     time: 0,
+    passiveScoreTimer: PASSIVE_SCORE_START,
+    gameSpeed: 1,
+    redHexagonsSpawned: 0,
     spawnTimer: 0,
     hazardTimer: 0,
     pointerReady: false,
     activePointers: new Set(),
     restartBlockedUntil: 0,
+    relativePointer: false,
+    lastPointerPosition: null,
+    pointerLocked: false,
     keys: new Set(),
     target: { x: 0, y: 0 },
     player: { x: 0, y: 0, radius: 22, angle: 0, speed: 760 },
     entities: [],
     particles: []
   };
-
-  bestNode.textContent = state.best;
 
   function resize() {
     // Match canvas pixels to the visible size so the game does not look blurry.
@@ -112,32 +157,46 @@
     state.target.y ||= state.height / 2;
   }
 
-  function start() {
+  function start(options = {}) {
     // Reset all the moving parts back to a fresh run.
+    const restartX = state.width / 2;
+    const restartY = state.height / 2;
     startAudio();
     state.running = true;
     state.paused = false;
     state.gameOver = false;
     state.score = 0;
     state.time = 0;
+    state.passiveScoreTimer = PASSIVE_SCORE_START;
+    state.gameSpeed = 1;
+    state.redHexagonsSpawned = 0;
     state.spawnTimer = 0;
     state.hazardTimer = 0.7;
     state.entities.length = 0;
     state.particles.length = 0;
-    state.player.x = state.width / 2;
-    state.player.y = state.height / 2;
+    state.player.x = restartX;
+    state.player.y = restartY;
     state.player.angle = 0;
     state.target.x = state.player.x;
     state.target.y = state.player.y;
-    scoreNode.textContent = "0";
+    state.pointerReady = true;
+    state.relativePointer = Boolean(options.relativePointer);
+    state.lastPointerPosition = options.pointerPosition || null;
+    if (options.lockPointer && canvas.requestPointerLock) {
+      canvas.requestPointerLock();
+    }
     centerScoreNode.textContent = "0";
-    pauseButton.textContent = "II";
-    pauseButton.setAttribute("aria-label", "Pause game");
+    highScoreNode.hidden = true;
+    gameShell.classList.remove("is-lost");
     overlay.hidden = true;
+    requestLandscape();
   }
 
   function endGame() {
     // Save best score locally in this browser, then show the replay screen.
+    if (document.pointerLockElement === canvas) {
+      document.exitPointerLock();
+    }
     music.lose();
     state.gameOver = true;
     state.running = false;
@@ -147,36 +206,37 @@
     if (state.score > state.best) {
       state.best = state.score;
       localStorage.setItem(STORAGE_KEY, String(state.best));
-      bestNode.textContent = state.best;
     }
-    overlay.querySelector("h1").textContent = "Game Over";
-    overlay.querySelector("p").textContent = `Score ${state.score}. Collect dark hexagons and avoid crimson ones.`;
-    startButton.textContent = "Again?";
+    centerScoreNode.textContent = state.score;
+    highScoreNode.textContent = `high score: ${state.best}`;
+    highScoreNode.hidden = false;
+    gameShell.classList.add("is-lost");
+    overlay.querySelector("h1").textContent = "";
+    overlay.querySelector("p").textContent = "";
+    startButton.textContent = "again?";
     overlay.hidden = false;
     burst(state.player.x, state.player.y, "#ff4c66", 42);
-  }
-
-  function togglePause() {
-    // Same overlay as the title screen, just with pause text swapped in.
-    if (!state.running && !state.paused) return;
-    state.paused = !state.paused;
-    pauseButton.textContent = state.paused ? ">" : "II";
-    pauseButton.setAttribute("aria-label", state.paused ? "Resume game" : "Pause game");
-    if (state.paused) {
-      pauseAudio();
-      overlay.querySelector("h1").textContent = "Paused";
-      overlay.querySelector("p").textContent = "Take a breath. The hexagons will wait.";
-      startButton.textContent = "Resume";
-      overlay.hidden = false;
-    } else {
-      resumeAudio();
-      overlay.hidden = true;
-    }
   }
 
   function startAudio() {
     // V4: play again swaps back to normal audio at the same time on the file.
     music.playNormal();
+  }
+
+  function requestLandscape() {
+    // V6.2: ask for landscape when the browser lets me; CSS handles the stubborn ones.
+    if (!screen.orientation?.lock) return;
+    screen.orientation.lock("landscape").catch(() => {});
+  }
+
+  function addScore(points) {
+    state.score += points;
+    centerScoreNode.textContent = state.score;
+  }
+
+  function passiveScoreInterval() {
+    const steps = Math.floor(state.score / 100);
+    return PASSIVE_SCORE_INTERVAL * (PASSIVE_SCORE_SPEEDUP ** steps);
   }
 
   function canAutoStart() {
@@ -196,13 +256,29 @@
     }
   }
 
-  function pauseAudio() {
-    // Keep pause simple: the music controller remembers what it was doing.
-    music.pause();
-  }
-
-  function resumeAudio() {
-    music.resume();
+  function updatePointerTarget(event) {
+    const position = pointerPosition(event);
+    if (state.pointerLocked) {
+      state.player.x = clamp(state.player.x + event.movementX, state.player.radius, state.width - state.player.radius);
+      state.player.y = clamp(state.player.y + event.movementY, state.player.radius, state.height - state.player.radius);
+      state.target.x = state.player.x;
+      state.target.y = state.player.y;
+      state.pointerReady = true;
+      return;
+    }
+    if (state.relativePointer) {
+      if (state.lastPointerPosition) {
+        const dx = position.x - state.lastPointerPosition.x;
+        const dy = position.y - state.lastPointerPosition.y;
+        state.target.x = clamp(state.target.x + dx, state.player.radius, state.width - state.player.radius);
+        state.target.y = clamp(state.target.y + dy, state.player.radius, state.height - state.player.radius);
+      }
+      state.lastPointerPosition = position;
+      state.pointerReady = true;
+      return;
+    }
+    state.pointerReady = true;
+    Object.assign(state.target, position);
   }
 
   function createMusicController(normalIntro, normalLoop, lostIntro, lostLoop) {
@@ -435,7 +511,7 @@
     const margin = 40;
     const speedMultiplier = 1.25;
     const blackHexagonSpeedMultiplier = 1.25;
-    const size = type === "hazard" ? rand(15, 28) : rand(13, 23);
+    const size = type === "hazard" ? rand(15, 28) : type === "slowCircle" ? rand(15, 24) : rand(13, 23);
     let x = rand(-margin, state.width + margin);
     let y = rand(-margin, state.height + margin);
     if (edge === 0) y = -margin;
@@ -443,7 +519,7 @@
     if (edge === 2) y = state.height + margin;
     if (edge === 3) x = -margin;
 
-    const baseSpeed = (70 + Math.min(170, state.time * 4)) * speedMultiplier;
+    const baseSpeed = (70 + Math.min(170, state.time * 4 * SPEED_RAMP_SCALE)) * speedMultiplier;
     let vx = 0;
     let vy = 0;
 
@@ -469,6 +545,7 @@
       x,
       y,
       radius: size,
+      hitRadius: type === "slowCircle" ? state.player.radius * 0.5 : size,
       vx,
       vy,
       angle: rand(0, TAU),
@@ -479,28 +556,44 @@
   function update(dt) {
     // dt means "delta time": how many seconds passed since the last frame.
     if (!state.running || state.paused) return;
-    state.time += dt;
-    state.player.angle += dt * (3.5 + state.score * 0.015);
+    const gameDt = dt * state.gameSpeed;
+    state.time += gameDt;
+    state.player.angle += gameDt * (3.5 + state.score * 0.015) * SPIN_SCALE;
 
-    movePlayer(dt);
+    movePlayer(gameDt);
+    updatePassiveScore(gameDt);
 
-    state.spawnTimer -= dt;
-    state.hazardTimer -= dt;
+    state.spawnTimer -= gameDt;
+    state.hazardTimer -= gameDt;
     if (state.spawnTimer <= 0) {
       spawn("score");
-      state.spawnTimer = Math.max(0.18, 0.62 - state.time * 0.008);
+      state.spawnTimer = Math.max(0.18, 0.62 - state.time * 0.008 * SPEED_RAMP_SCALE);
     }
     if (state.hazardTimer <= 0) {
       spawn("hazard");
-      state.hazardTimer = Math.max(0.38, 1.15 - state.time * 0.01);
+      state.redHexagonsSpawned += 1;
+      if (state.redHexagonsSpawned % SLOW_CIRCLE_FREQUENCY === 0) {
+        spawn("slowCircle");
+      }
+      state.hazardTimer = Math.max(0.38, 1.15 - state.time * 0.01 * SPEED_RAMP_SCALE);
     }
 
-    updateEntities(dt);
-    updateParticles(dt);
+    updateEntities(gameDt);
+    updateParticles(gameDt);
+  }
+
+  function updatePassiveScore(dt) {
+    state.passiveScoreTimer -= dt;
+    while (state.passiveScoreTimer <= 0) {
+      addScore(1);
+      state.passiveScoreTimer += passiveScoreInterval();
+    }
   }
 
   function movePlayer(dt) {
     // V2.0: the main collecter hexagone becomes the cursor, no mouseclick needed.
+    if (state.pointerLocked) return;
+
     const player = state.player;
     let dx = 0;
     let dy = 0;
@@ -542,14 +635,20 @@
         continue;
       }
 
-      if (Math.hypot(entity.x - player.x, entity.y - player.y) < entity.radius + player.radius * 0.72) {
+      const distance = Math.hypot(entity.x - player.x, entity.y - player.y);
+      if (entity.type === "slowCircle" && distance < entity.hitRadius) {
+        state.gameSpeed *= 0.75;
+        burst(entity.x, entity.y, "#20242d", 18);
+        state.entities.splice(i, 1);
+        continue;
+      }
+
+      if (distance < entity.hitRadius + player.radius * 0.72) {
         if (entity.type === "hazard") {
           endGame();
           return;
         }
-        state.score += 10 + Math.floor(state.time / 12);
-        scoreNode.textContent = state.score;
-        centerScoreNode.textContent = state.score;
+        addScore(10 + Math.floor(state.time / 12));
         burst(entity.x, entity.y, "#d7dde7", 12);
         state.entities.splice(i, 1);
       }
@@ -574,7 +673,11 @@
 
     for (const entity of state.entities) {
       const color = entity.type === "hazard" ? "#ff4c66" : "#20242d";
-      drawHex(entity.x, entity.y, entity.radius, entity.angle, color, entity.type === "score" ? "#eef2f7" : "rgba(255,255,255,0.72)");
+      if (entity.type === "slowCircle") {
+        drawCircle(entity.x, entity.y, entity.radius, "#20242d", "rgba(255,255,255,0.72)");
+      } else {
+        drawHex(entity.x, entity.y, entity.radius, entity.angle, color, entity.type === "score" ? "#eef2f7" : "rgba(255,255,255,0.72)");
+      }
     }
 
     for (const p of state.particles) {
@@ -587,7 +690,7 @@
   }
 
   function drawGrid() {
-    // V5.0: dark honeycomb hex patern, muted enough to stay in the background.
+    // V5.1: background hexagon size increased by 300%.
     ctx.save();
     ctx.globalAlpha = 0.72;
     ctx.strokeStyle = "#303030";
@@ -595,7 +698,7 @@
     ctx.fillStyle = "#0A0A0A";
     ctx.fillRect(0, 0, state.width, state.height);
 
-    const radius = 24;
+    const radius = 96;
     const hexWidth = Math.sqrt(3) * radius;
     const rowHeight = radius * 1.5;
     for (let y = -radius; y < state.height + radius; y += rowHeight) {
@@ -639,6 +742,17 @@
       ctx.lineWidth = lineWidth;
       ctx.stroke();
     }
+  }
+
+  function drawCircle(x, y, radius, fill, stroke) {
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, TAU);
+    ctx.closePath();
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.stroke();
   }
 
   function burst(x, y, color, count) {
@@ -688,19 +802,21 @@
   }
 
   window.addEventListener("resize", resize);
+  document.addEventListener("pointerlockchange", () => {
+    state.pointerLocked = document.pointerLockElement === canvas;
+    state.relativePointer = state.pointerLocked || state.relativePointer;
+  });
   // Pointer events cover mouse, touch, and stylus in one set of handlers.
   canvas.addEventListener("pointerdown", (event) => {
     canvas.setPointerCapture(event.pointerId);
     state.activePointers.add(event.pointerId);
-    state.pointerReady = true;
-    Object.assign(state.target, pointerPosition(event));
+    updatePointerTarget(event);
     if (canAutoStart()) start();
   });
   canvas.addEventListener("pointermove", (event) => {
     // V2.0: movement updates even without pressing, so the player becomes the cursor.
     // V4.1: after losing, this can move the cursor but cannot restart the game by itself.
-    state.pointerReady = true;
-    Object.assign(state.target, pointerPosition(event));
+    updatePointerTarget(event);
     if (canAutoStart()) start();
   });
   canvas.addEventListener("pointerup", (event) => {
@@ -713,31 +829,31 @@
   });
 
   window.addEventListener("keydown", (event) => {
-    // Space starts/pauses, arrows and WASD steer when no pointer is active.
+    // Space starts, arrows and WASD steer when no pointer is active.
     state.keys.add(event.code);
     if (event.code === "Space") {
       event.preventDefault();
       if (canAutoStart() || state.gameOver) start();
-      else togglePause();
     }
   });
   window.addEventListener("keyup", (event) => state.keys.delete(event.code));
 
-  startButton.addEventListener("click", () => {
-    if (state.gameOver && !canClickRestart()) return;
-    if (state.paused) {
-      state.paused = false;
-      resumeAudio();
-      overlay.hidden = true;
-      pauseButton.textContent = "II";
-      pauseButton.setAttribute("aria-label", "Pause game");
-    } else {
-      overlay.querySelector("h1").textContent = "Hex Rush";
-      startButton.textContent = "Play";
-      start();
-    }
+  startButton.addEventListener("pointerdown", (event) => {
+    lastButtonPointerType = event.pointerType || "mouse";
   });
-  pauseButton.addEventListener("click", togglePause);
+  startButton.addEventListener("click", (event) => {
+    if (state.gameOver && !canClickRestart()) return;
+    const pointerStart = pointerPosition(event);
+    const useRelativePointer = lastButtonPointerType === "mouse";
+    overlay.querySelector("h1").textContent = "hex rush";
+    overlay.querySelector("p").innerHTML = "collect dark hexagons<br>avoid red ones";
+    startButton.textContent = "play";
+    start({
+      relativePointer: useRelativePointer,
+      pointerPosition: pointerStart,
+      lockPointer: useRelativePointer
+    });
+  });
 
   resize();
   requestAnimationFrame(loop);

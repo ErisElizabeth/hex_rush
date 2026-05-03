@@ -1,6 +1,46 @@
-# Hex Rush V5.0
+# hex rush v6.2
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## v6.2 changes
+
+- the 35% decrease was a mistake, fixing it
+- forced mobile devices into landscape (trust me)
+- from the first second of game play, in addition to collecting hexagons, the score automatically goes up 1 point
+- then another point every 5 secons after that
+- increase speed of that score going up by 10% for every 100 poins scored
+
+## v6.1 changes
+
+- changed red circles to dark circles
+- collecttor hexagon spin is increasing too fast, reduced to 7% of before
+- changed entrence screen text to `collect dark hexagons` / `avoid red ones`
+- changed all font to Garamond for shits and giggles
+- increased frequency of circles from 1:22 to 1:14
+- dialed down the speed up by 335%
+
+## v6.0 changes
+
+- added red circles that slow game play down 25% very 1 for every 22 red hexagon
+- gameplay speeds back up as before from the new point
+- circle hitbox is 50% size of collector hex
+
+## v5.2 changes
+
+- upon restarting the game from the `loss` screen
+- the cursor dipped down to the bottom of the screen
+- patched the error by restarting in the middle of the screen
+
+## v5.1 changes
+
+- Changed center score to `#d9d9d9`
+- Eliminated `score`, `best`, and `pause` from the visible UI
+- Eliminated `game over`; the center score becomes `#f5f5f5`
+- Added a 20% zoom on the center score upon a loss
+- Added `high score: [high_score]` below the score on the loss screen at 50% size
+- Moved the `again?` button lower
+- Eliminated capital letters throughout the visible game UI
+- Increased background hexagon size by 300%
 
 ## V5.0 Changes
 
