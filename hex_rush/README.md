@@ -1,6 +1,13 @@
-# Hex Rush
+# Hex Rush V2.0
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## V2.0 Changes
+
+- Removed the blue and yellow hexagons
+- Black hexagons now travel in a linear fasion, only on the x and y axis
+- All entering hexagons are 25% faster
+- The main collecter hexagone moves without mouseclicks and becomes the cursor
 
 ## Files
 
@@ -25,7 +32,6 @@ For mobile pages, put the iframe in a container that has a stable height, such a
 
 ## Controls
 
-- Mouse, touch, or stylus: press and drag to steer the player hexagon
+- Mouse, touch, or stylus: move over the game and the collecter hexagone follows
 - Keyboard: WASD or arrow keys
 - Space: start or pause
-

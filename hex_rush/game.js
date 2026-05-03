@@ -1,13 +1,19 @@
 (() => {
   /*
-    Hex Rush V1.0
+    Hex Rush V2.0
     2026 eriselizabeth.com
-    Created: 2026-05-03 11:12:40 -04:00
+    Updated: 2026-05-03 11:32:59 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
     one state object, one animation loop, and a few helper functions that each
     try to do one thing.
+
+    V2.0 changes:
+    - got rid of the blue and yellow hexagons
+    - the black hexagons now travel in a linear fasion, only on the x and y axis
+    - all hexagons entering are 25% faster
+    - the main collecter hexagone moves without mouseclicks, it becomes the cursor
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -34,11 +40,10 @@
     time: 0,
     spawnTimer: 0,
     hazardTimer: 0,
-    powerTimer: 0,
-    pointerActive: false,
+    pointerReady: false,
     keys: new Set(),
     target: { x: 0, y: 0 },
-    player: { x: 0, y: 0, radius: 22, angle: 0, speed: 760, burst: 0, slow: 0 },
+    player: { x: 0, y: 0, radius: 22, angle: 0, speed: 760 },
     entities: [],
     particles: []
   };
@@ -66,14 +71,11 @@
     state.time = 0;
     state.spawnTimer = 0;
     state.hazardTimer = 0.7;
-    state.powerTimer = 4;
     state.entities.length = 0;
     state.particles.length = 0;
     state.player.x = state.width / 2;
     state.player.y = state.height / 2;
     state.player.angle = 0;
-    state.player.burst = 0;
-    state.player.slow = 0;
     state.target.x = state.player.x;
     state.target.y = state.player.y;
     scoreNode.textContent = "0";
@@ -92,7 +94,7 @@
       bestNode.textContent = state.best;
     }
     overlay.querySelector("h1").textContent = "Game Over";
-    overlay.querySelector("p").textContent = `Score ${state.score}. Collect dark hexagons, avoid crimson ones, and use blue boosts to stay alive.`;
+    overlay.querySelector("p").textContent = `Score ${state.score}. Collect dark hexagons and avoid crimson ones.`;
     startButton.textContent = "Play Again";
     overlay.hidden = false;
     burst(state.player.x, state.player.y, "#ff4c66", 42);
@@ -115,10 +117,11 @@
   }
 
   function spawn(type) {
-    // New hexagons enter from an edge and drift toward the middle-ish area.
+    // New hexagons enter from an edge. V2.0 makes them 25% faster.
     const edge = Math.floor(Math.random() * 4);
     const margin = 40;
-    const size = type === "hazard" ? rand(15, 28) : type === "slow" ? rand(16, 24) : rand(13, 23);
+    const speedMultiplier = 1.25;
+    const size = type === "hazard" ? rand(15, 28) : rand(13, 23);
     let x = rand(-margin, state.width + margin);
     let y = rand(-margin, state.height + margin);
     if (edge === 0) y = -margin;
@@ -126,15 +129,32 @@
     if (edge === 2) y = state.height + margin;
     if (edge === 3) x = -margin;
 
-    const angle = Math.atan2(state.height / 2 - y + rand(-160, 160), state.width / 2 - x + rand(-160, 160));
-    const baseSpeed = 70 + Math.min(170, state.time * 4);
+    const baseSpeed = (70 + Math.min(170, state.time * 4)) * speedMultiplier;
+    let vx = 0;
+    let vy = 0;
+
+    if (type === "score") {
+      // V2.0: black hexagons travel in a linear fasion, only on the x and y axis.
+      const speed = rand(baseSpeed * 0.65, baseSpeed);
+      const direction = edge === 0 || edge === 3 ? 1 : -1;
+      if (edge === 0 || edge === 2) {
+        vy = speed * direction;
+      } else {
+        vx = speed * direction;
+      }
+    } else {
+      const angle = Math.atan2(state.height / 2 - y + rand(-160, 160), state.width / 2 - x + rand(-160, 160));
+      vx = Math.cos(angle) * rand(baseSpeed * 0.65, baseSpeed);
+      vy = Math.sin(angle) * rand(baseSpeed * 0.65, baseSpeed);
+    }
+
     state.entities.push({
       type,
       x,
       y,
       radius: size,
-      vx: Math.cos(angle) * rand(baseSpeed * 0.65, baseSpeed),
-      vy: Math.sin(angle) * rand(baseSpeed * 0.65, baseSpeed),
+      vx,
+      vy,
       angle: rand(0, TAU),
       spin: rand(-2.8, 2.8)
     });
@@ -145,14 +165,11 @@
     if (!state.running || state.paused) return;
     state.time += dt;
     state.player.angle += dt * (3.5 + state.score * 0.015);
-    state.player.burst = Math.max(0, state.player.burst - dt);
-    state.player.slow = Math.max(0, state.player.slow - dt);
 
     movePlayer(dt);
 
     state.spawnTimer -= dt;
     state.hazardTimer -= dt;
-    state.powerTimer -= dt;
     if (state.spawnTimer <= 0) {
       spawn("score");
       state.spawnTimer = Math.max(0.18, 0.62 - state.time * 0.008);
@@ -161,27 +178,23 @@
       spawn("hazard");
       state.hazardTimer = Math.max(0.38, 1.15 - state.time * 0.01);
     }
-    if (state.powerTimer <= 0) {
-      spawn(Math.random() > 0.45 ? "boost" : "slow");
-      state.powerTimer = rand(4.8, 7.8);
-    }
 
     updateEntities(dt);
     updateParticles(dt);
   }
 
   function movePlayer(dt) {
-    // Pointer control follows your finger/mouse. Keyboard is the backup plan.
+    // V2.0: the main collecter hexagone becomes the cursor, no mouseclick needed.
     const player = state.player;
     let dx = 0;
     let dy = 0;
 
-    if (state.pointerActive) {
+    if (state.pointerReady) {
       dx = state.target.x - player.x;
       dy = state.target.y - player.y;
       const distance = Math.hypot(dx, dy);
       if (distance > 1) {
-        const speed = player.speed * (player.burst > 0 ? 1.45 : 1) * (player.slow > 0 ? 0.58 : 1);
+        const speed = player.speed;
         const step = Math.min(distance, speed * dt);
         player.x += (dx / distance) * step;
         player.y += (dy / distance) * step;
@@ -190,7 +203,7 @@
       dx = Number(state.keys.has("ArrowRight") || state.keys.has("KeyD")) - Number(state.keys.has("ArrowLeft") || state.keys.has("KeyA"));
       dy = Number(state.keys.has("ArrowDown") || state.keys.has("KeyS")) - Number(state.keys.has("ArrowUp") || state.keys.has("KeyW"));
       const distance = Math.hypot(dx, dy) || 1;
-      const speed = 390 * (player.burst > 0 ? 1.45 : 1) * (player.slow > 0 ? 0.58 : 1);
+      const speed = 390;
       player.x += (dx / distance) * speed * dt;
       player.y += (dy / distance) * speed * dt;
     }
@@ -218,17 +231,9 @@
           endGame();
           return;
         }
-        if (entity.type === "boost") {
-          player.burst = 2.8;
-          burst(entity.x, entity.y, "#55b7ff", 18);
-        } else if (entity.type === "slow") {
-          player.slow = 2.2;
-          burst(entity.x, entity.y, "#f2b84b", 16);
-        } else {
-          state.score += 10 + Math.floor(state.time / 12);
-          scoreNode.textContent = state.score;
-          burst(entity.x, entity.y, "#d7dde7", 12);
-        }
+        state.score += 10 + Math.floor(state.time / 12);
+        scoreNode.textContent = state.score;
+        burst(entity.x, entity.y, "#d7dde7", 12);
         state.entities.splice(i, 1);
       }
     }
@@ -251,7 +256,7 @@
     drawGrid();
 
     for (const entity of state.entities) {
-      const color = entity.type === "hazard" ? "#ff4c66" : entity.type === "boost" ? "#55b7ff" : entity.type === "slow" ? "#f2b84b" : "#20242d";
+      const color = entity.type === "hazard" ? "#ff4c66" : "#20242d";
       drawHex(entity.x, entity.y, entity.radius, entity.angle, color, entity.type === "score" ? "#eef2f7" : "rgba(255,255,255,0.72)");
     }
 
@@ -261,8 +266,7 @@
       ctx.globalAlpha = 1;
     }
 
-    const playerColor = state.player.burst > 0 ? "#55b7ff" : state.player.slow > 0 ? "#f2b84b" : "#05070a";
-    drawHex(state.player.x, state.player.y, state.player.radius, state.player.angle, playerColor, "#ffffff", 3);
+    drawHex(state.player.x, state.player.y, state.player.radius, state.player.angle, "#05070a", "#ffffff", 3);
   }
 
   function drawGrid() {
@@ -351,19 +355,21 @@
   // Pointer events cover mouse, touch, and stylus in one set of handlers.
   canvas.addEventListener("pointerdown", (event) => {
     canvas.setPointerCapture(event.pointerId);
-    state.pointerActive = true;
+    state.pointerReady = true;
     Object.assign(state.target, pointerPosition(event));
     if (!state.running && !state.paused) start();
   });
   canvas.addEventListener("pointermove", (event) => {
-    if (!state.pointerActive) return;
+    // V2.0: movement updates even without pressing, so the player becomes the cursor.
+    state.pointerReady = true;
     Object.assign(state.target, pointerPosition(event));
+    if (!state.running && !state.paused) start();
   });
   canvas.addEventListener("pointerup", () => {
-    state.pointerActive = false;
+    state.pointerReady = true;
   });
   canvas.addEventListener("pointercancel", () => {
-    state.pointerActive = false;
+    state.pointerReady = false;
   });
 
   window.addEventListener("keydown", (event) => {

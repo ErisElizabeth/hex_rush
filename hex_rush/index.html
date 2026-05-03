@@ -2,13 +2,16 @@
 <html lang="en">
   <head>
     <!--
-      Hex Rush V1.0
+      Hex Rush V2.0
       2026 eriselizabeth.com
-      Created: 2026-05-03 11:12:40 -04:00
+      Updated: 2026-05-03 11:32:59 -04:00
 
       Main page shell for the game. I am keeping this pretty simple on purpose:
       canvas does the drawing, the HUD shows score stuff, and the overlay handles
       start/pause/game over screens.
+
+      V2.0 note: got rid of blue/yellow hexagons, and the collecter hexagone
+      follows the cursor without needing mouseclicks.
     -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -33,7 +36,7 @@
 
       <section id="overlay" class="overlay">
         <h1>Hex Rush</h1>
-        <p>Collect dark hexagons. Dodge crimson ones. Amber slows you down, blue gives you a burst.</p>
+        <p>Collect dark hexagons. Dodge crimson ones. Move the cursor and the collecter hexagone follows.</p>
         <button id="startButton" type="button">Play</button>
       </section>
     </main>
