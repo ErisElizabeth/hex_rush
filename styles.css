@@ -122,7 +122,7 @@ button:focus-visible {
   /* This is the whole game stage, so it needs to behave on phones too. */
   position: relative;
   width: 100vw;
-  height: 100svh;
+  height: 100dvh;
   min-height: 420px;
   isolation: isolate;
   background:
@@ -242,4 +242,44 @@ button:focus-visible {
     min-height: 100svh;
   }
 
+}
+
+@media (orientation: landscape) and (pointer: coarse) {
+  html,
+  body {
+    height: 100dvh;
+    position: fixed;
+    inset: 0;
+  }
+
+  .game-shell {
+    height: 100dvh;
+    min-height: 0;
+  }
+
+  .center-score {
+    font-size: clamp(3rem, 18vh, 8rem);
+  }
+
+  .high-score {
+    font-size: clamp(0.9rem, 5vh, 1.6rem);
+  }
+
+  .game-shell.is-lost .center-score {
+    transform: scale(1.12);
+  }
+
+  .game-shell.is-lost .center-score-wrap {
+    padding-bottom: clamp(52px, 19vh, 86px);
+  }
+
+  .game-shell.is-lost .overlay {
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .overlay button {
+    min-height: 38px;
+    min-width: 112px;
+    padding: 0 18px;
+  }
 }
