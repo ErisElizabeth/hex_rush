@@ -76,6 +76,7 @@
   passive score starts after 1 second, then keeps ticking faster
   garamond wasnt working, back to the origanal font
   mobile rotate prompt removed, restored normal mobile behavior
+  mobile landscape browser bar was messing with the game, try fullscreen on play
 */
 
 :root {
@@ -127,6 +128,18 @@ button:focus-visible {
   isolation: isolate;
   background:
     linear-gradient(145deg, #0A0A0A 0%, #101010 52%, #070707 100%);
+}
+
+.game-shell:fullscreen {
+  width: 100vw;
+  height: 100dvh;
+  min-height: 0;
+}
+
+.game-shell:-webkit-full-screen {
+  width: 100vw;
+  height: 100dvh;
+  min-height: 0;
 }
 
 #gameCanvas {

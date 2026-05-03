@@ -95,6 +95,7 @@
     - increase speed of that score going up by 10% for every 100 poins scored
     - garamond wasnt working, back to the origanal font
     - mobile rotate prompt removed, restored normal mobile behavior
+    - mobile landscape browser bar was messing with the game, try fullscreen on play
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -224,6 +225,16 @@
   function startAudio() {
     // V4: play again swaps back to normal audio at the same time on the file.
     music.playNormal();
+  }
+
+  function isTouchDevice() {
+    return window.matchMedia?.("(pointer: coarse)").matches;
+  }
+
+  function requestFullscreenPlay() {
+    // Mobile browser chrome can cover the game in landscape; fullscreen is the best web-safe ask.
+    if (!isTouchDevice() || document.fullscreenElement || !gameShell.requestFullscreen) return;
+    gameShell.requestFullscreen({ navigationUI: "hide" }).catch(() => {});
   }
 
   function addScore(points) {
@@ -799,6 +810,8 @@
   }
 
   window.addEventListener("resize", resize);
+  document.addEventListener("fullscreenchange", resize);
+  document.addEventListener("webkitfullscreenchange", resize);
   document.addEventListener("pointerlockchange", () => {
     state.pointerLocked = document.pointerLockElement === canvas;
     state.relativePointer = state.pointerLocked || state.relativePointer;
@@ -840,6 +853,7 @@
   });
   startButton.addEventListener("click", (event) => {
     if (state.gameOver && !canClickRestart()) return;
+    requestFullscreenPlay();
     const pointerStart = pointerPosition(event);
     const useRelativePointer = lastButtonPointerType === "mouse";
     overlay.querySelector("h1").textContent = "hex rush";
