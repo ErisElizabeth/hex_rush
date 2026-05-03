@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V4.2
+    Hex Rush V5.0
     2026 eriselizabeth.com
-    Updated: 2026-05-03 13:38:05 -04:00
+    Updated: 2026-05-03 14:00:17 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -49,11 +49,19 @@
     - if the screen is being touched, automatically restarts
     - how to get this to behave on a touchscreen???
     - block the old touch release from becoming a Play Again click
+
+    V5.0 changes:
+    - added very muted score in the middle of the screen #8A8A8A
+    - changed the texture of the background to a dark honeycomb hex patern muted tones, not overwhelming
+    - background #0A0A0A boarders #303030
+    - change colors on "play" button and "play again" buttons to #252525
+    - changed "play again" to "Again?"
   */
 
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
   const scoreNode = document.getElementById("score");
+  const centerScoreNode = document.getElementById("centerScore");
   const bestNode = document.getElementById("best");
   const overlay = document.getElementById("overlay");
   const startButton = document.getElementById("startButton");
@@ -122,6 +130,7 @@
     state.target.x = state.player.x;
     state.target.y = state.player.y;
     scoreNode.textContent = "0";
+    centerScoreNode.textContent = "0";
     pauseButton.textContent = "II";
     pauseButton.setAttribute("aria-label", "Pause game");
     overlay.hidden = true;
@@ -142,7 +151,7 @@
     }
     overlay.querySelector("h1").textContent = "Game Over";
     overlay.querySelector("p").textContent = `Score ${state.score}. Collect dark hexagons and avoid crimson ones.`;
-    startButton.textContent = "Play Again";
+    startButton.textContent = "Again?";
     overlay.hidden = false;
     burst(state.player.x, state.player.y, "#ff4c66", 42);
   }
@@ -540,6 +549,7 @@
         }
         state.score += 10 + Math.floor(state.time / 12);
         scoreNode.textContent = state.score;
+        centerScoreNode.textContent = state.score;
         burst(entity.x, entity.y, "#d7dde7", 12);
         state.entities.splice(i, 1);
       }
@@ -577,19 +587,38 @@
   }
 
   function drawGrid() {
-    // A quiet background grid so the screen has motion without being loud.
+    // V5.0: dark honeycomb hex patern, muted enough to stay in the background.
     ctx.save();
-    ctx.globalAlpha = 0.34;
-    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.globalAlpha = 0.72;
+    ctx.strokeStyle = "#303030";
     ctx.lineWidth = 1;
-    const gap = 42;
-    for (let x = -gap; x < state.width + gap; x += gap) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x + state.height * 0.34, state.height);
-      ctx.stroke();
+    ctx.fillStyle = "#0A0A0A";
+    ctx.fillRect(0, 0, state.width, state.height);
+
+    const radius = 24;
+    const hexWidth = Math.sqrt(3) * radius;
+    const rowHeight = radius * 1.5;
+    for (let y = -radius; y < state.height + radius; y += rowHeight) {
+      const row = Math.round((y + radius) / rowHeight);
+      const offset = row % 2 === 0 ? 0 : hexWidth / 2;
+      for (let x = -hexWidth; x < state.width + hexWidth; x += hexWidth) {
+        drawHexOutline(x + offset, y, radius);
+      }
     }
     ctx.restore();
+  }
+
+  function drawHexOutline(x, y, radius) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i += 1) {
+      const pointAngle = Math.PI / 6 + TAU * (i / 6);
+      const px = x + Math.cos(pointAngle) * radius;
+      const py = y + Math.sin(pointAngle) * radius;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.stroke();
   }
 
   function drawHex(x, y, radius, angle, fill, stroke, lineWidth = 2) {

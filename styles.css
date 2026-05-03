@@ -1,7 +1,7 @@
 /*
-  Hex Rush V4.2
+  Hex Rush V5.0
   2026 eriselizabeth.com
-  Updated: 2026-05-03 13:38:05 -04:00
+  Updated: 2026-05-03 14:00:17 -04:00
 
   Styling for the game page. The goal here is "clean arcade screen" without
   needing a whole design system. I am still learning, so these sections are
@@ -33,11 +33,17 @@
   V4.2 note:
   if the screen is being touched, automatically restarts
   fixed in JavaScript, CSS only gets the version stamp
+
+  V5.0 note:
+  added very muted score in the middle of the screen #8A8A8A
+  dark honeycomb hex patern gets drawn in the canvas by game.js
+  background #0A0A0A boarders #303030
+  play/play again buttons are #252525
 */
 
 :root {
   color-scheme: dark;
-  --bg: #101216;
+  --bg: #0A0A0A;
   --panel: rgba(18, 21, 27, 0.76);
   --ink: #f3f5f8;
   --muted: #a8b0bd;
@@ -83,8 +89,7 @@ button:focus-visible {
   min-height: 420px;
   isolation: isolate;
   background:
-    radial-gradient(circle at 30% 10%, rgba(83, 209, 182, 0.14), transparent 32%),
-    linear-gradient(145deg, #101216 0%, #171b23 48%, #0f1117 100%);
+    linear-gradient(145deg, #0A0A0A 0%, #101010 52%, #070707 100%);
 }
 
 #gameCanvas {
@@ -94,6 +99,21 @@ button:focus-visible {
   height: 100%;
   cursor: none;
   touch-action: none;
+}
+
+.center-score {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  color: #8A8A8A;
+  font-size: clamp(5rem, 24vw, 18rem);
+  font-weight: 900;
+  line-height: 1;
+  opacity: 0.18;
+  pointer-events: none;
+  user-select: none;
 }
 
 .hud {
@@ -183,9 +203,9 @@ button:focus-visible {
   min-width: 136px;
   min-height: 48px;
   padding: 0 24px;
-  background: var(--accent);
+  background: #252525;
   border-color: transparent;
-  color: #07110f;
+  color: #f3f5f8;
   font-weight: 800;
 }
 

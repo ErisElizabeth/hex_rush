@@ -1,6 +1,14 @@
-# Hex Rush V4.2
+# Hex Rush V5.0
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## V5.0 Changes
+
+- Added very muted score in the middle of the screen `#8A8A8A`
+- Changed the texture of the background to a dark honeycomb hex patern in muted tones
+- Set background to `#0A0A0A` and boarders to `#303030`
+- Changed Play and Again? buttons to `#252525`
+- Changed `Play Again` to `Again?`
 
 ## V4.2 Changes
 

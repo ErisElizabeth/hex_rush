@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <!--
-      Hex Rush V4.2
+      Hex Rush V5.0
       2026 eriselizabeth.com
-      Updated: 2026-05-03 13:38:05 -04:00
+      Updated: 2026-05-03 14:00:17 -04:00
 
       Main page shell for the game. I am keeping this pretty simple on purpose:
       canvas does the drawing, the HUD shows score stuff, and the overlay handles
@@ -43,6 +43,13 @@
       if the screen isn't being touched, acts like it should upon game over
       if the screen is being touched, automatically restarts
       how to get this to behave on a touchscreen???
+
+      V5.0 note:
+      added very muted score in the middle of the screen #8A8A8A
+      changed the texture of the background to a dark honeycomb hex patern muted tones, not overwhelming
+      background #0A0A0A boarders #303030
+      change colors on "play" button and "play again" buttons to #252525
+      changed "play again" to "Again?"
     -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -64,6 +71,7 @@
       </div>
 
       <canvas id="gameCanvas" aria-label="Play area"></canvas>
+      <div id="centerScore" class="center-score" aria-hidden="true">0</div>
 
       <section id="overlay" class="overlay">
         <h1>Hex Rush</h1>
