@@ -1,14 +1,18 @@
-# hex rush v6.2
+# hex rush v6.3
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
 
-## v6.2 changes
+## v6.3 changes
 
-- the 35% decrease was a mistake, fixing it
 - forced mobile devices into landscape (trust me)
 - from the first second of game play, in addition to collecting hexagons, the score automatically goes up 1 point
 - then another point every 5 secons after that
 - increase speed of that score going up by 10% for every 100 poins scored
+- garamond wasnt working, back to the origanal font
+
+## v6.2 changes
+
+- the 35% decrease was a mistake, fixing it
 
 ## v6.1 changes
 

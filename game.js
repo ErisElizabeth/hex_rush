@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V6.2
+    Hex Rush V6.3
     2026 eriselizabeth.com
-    Updated: 2026-05-03 15:15:54 -04:00
+    Updated: 2026-05-03 15:25:49 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -87,10 +87,13 @@
 
     V6.2 changes:
     - the 35% decrease was a mistake, fixing it
+
+    V6.3 changes:
     - forced mobile devices into landscape (trust me)
     - from the first second of game play, in addition to collecting hexagons, the score automatically goes up 1 point
     - then another point every 5 secons after that
     - increase speed of that score going up by 10% for every 100 poins scored
+    - garamond wasnt working, back to the origanal font
   */
 
   const canvas = document.getElementById("gameCanvas");
