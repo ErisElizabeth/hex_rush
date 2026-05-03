@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!--
+      Hex Rush V1.0
+      2026 eriselizabeth.com
+      Created: 2026-05-03 11:12:40 -04:00
+
+      Main page shell for the game. I am keeping this pretty simple on purpose:
+      canvas does the drawing, the HUD shows score stuff, and the overlay handles
+      start/pause/game over screens.
+    -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Hex Rush</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="game-shell" aria-label="Hex Rush game">
+      <div class="hud" aria-live="polite">
+        <div>
+          <span class="label">Score</span>
+          <strong id="score">0</strong>
+        </div>
+        <div>
+          <span class="label">Best</span>
+          <strong id="best">0</strong>
+        </div>
+        <button id="pauseButton" type="button" aria-label="Pause game" title="Pause">II</button>
+      </div>
+
+      <canvas id="gameCanvas" aria-label="Play area"></canvas>
+
+      <section id="overlay" class="overlay">
+        <h1>Hex Rush</h1>
+        <p>Collect dark hexagons. Dodge crimson ones. Amber slows you down, blue gives you a burst.</p>
+        <button id="startButton" type="button">Play</button>
+      </section>
+    </main>
+
+    <script src="game.js"></script>
+  </body>
+</html>
