@@ -94,6 +94,7 @@
     - then another point every 5 secons after that
     - increase speed of that score going up by 10% for every 100 poins scored
     - garamond wasnt working, back to the origanal font
+    - mobile rotate prompt removed, restored normal mobile behavior
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -192,7 +193,6 @@
     highScoreNode.hidden = true;
     gameShell.classList.remove("is-lost");
     overlay.hidden = true;
-    requestLandscape();
   }
 
   function endGame() {
@@ -224,12 +224,6 @@
   function startAudio() {
     // V4: play again swaps back to normal audio at the same time on the file.
     music.playNormal();
-  }
-
-  function requestLandscape() {
-    // V6.2: ask for landscape when the browser lets me; CSS handles the stubborn ones.
-    if (!screen.orientation?.lock) return;
-    screen.orientation.lock("landscape").catch(() => {});
   }
 
   function addScore(points) {

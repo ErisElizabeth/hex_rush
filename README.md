@@ -9,6 +9,7 @@ A small embeddable HTML canvas game inspired by classic reflex Flash games. It u
 - then another point every 5 secons after that
 - increase speed of that score going up by 10% for every 100 poins scored
 - garamond wasnt working, back to the origanal font
+- mobile rotate prompt removed, restored normal mobile behavior
 
 ## v6.2 changes
 
