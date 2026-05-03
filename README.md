@@ -1,6 +1,13 @@
-# hex rush v6.3
+# hex rush v6.5
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## v6.5 changes
+
+- added a smaller text under high score with the high score person's name
+- added if a person beats the high score, can enter their name in the loss screen
+- will be displayed on the loss screen under `[high score]`
+- limit 40 charactors, allow all letters, numbers,  and `@_():/"'-=+$%#!.,;*&[]{}`
 
 ## v6.3 changes
 

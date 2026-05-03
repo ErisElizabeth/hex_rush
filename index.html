@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <!--
-      Hex Rush V6.3
+      Hex Rush V6.5
       2026 eriselizabeth.com
-      Updated: 2026-05-03 15:25:49 -04:00
+      Updated: 2026-05-03 16:13:42 -04:00
 
       Main page shell for the game. I am keeping this pretty simple on purpose:
       canvas does the drawing, the HUD shows score stuff, and the overlay handles
@@ -90,6 +90,13 @@
       increase speed of that score going up by 10% for every 100 poins scored
       garamond wasnt working, back to the origanal font
       mobile rotate prompt removed, restored normal mobile behavior
+      mobile landscape browser bar was messing with the game, try fullscreen on play
+
+      V6.5 note:
+      added a smaller text under high score with the high score person's name
+      added if a person beats the high score, can enter their name in the loss screen
+      will be displayed on the loss screen under [high score]
+      limit 40 charactors, allow all letters, numbers,  and @_():/"'-=+$%#!.,;*&[]{}
     -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -102,11 +109,17 @@
       <div id="centerScoreWrap" class="center-score-wrap" aria-hidden="true">
         <div id="centerScore" class="center-score">0</div>
         <div id="highScore" class="high-score" hidden>high score: 0</div>
+        <div id="highScoreName" class="high-score-name" hidden></div>
       </div>
 
       <section id="overlay" class="overlay">
         <h1>hex rush</h1>
         <p>collect dark hexagons<br>avoid red ones</p>
+        <form id="nameForm" class="name-form" hidden>
+          <label for="nameInput">new high score</label>
+          <input id="nameInput" type="text" maxlength="40" autocomplete="off" spellcheck="false">
+          <button id="saveNameButton" type="submit">save</button>
+        </form>
         <button id="startButton" type="button">play</button>
       </section>
     </main>

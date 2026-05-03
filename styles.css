@@ -1,7 +1,7 @@
 /*
-  Hex Rush V6.3
+  Hex Rush V6.5
   2026 eriselizabeth.com
-  Updated: 2026-05-03 15:25:49 -04:00
+  Updated: 2026-05-03 16:13:42 -04:00
 
   Styling for the game page. The goal here is "clean arcade screen" without
   needing a whole design system. I am still learning, so these sections are
@@ -77,6 +77,11 @@
   garamond wasnt working, back to the origanal font
   mobile rotate prompt removed, restored normal mobile behavior
   mobile landscape browser bar was messing with the game, try fullscreen on play
+
+  V6.5 note:
+  added a smaller text under high score with the high score person's name
+  added if a person beats the high score, can enter their name in the loss screen
+  limit 40 charactors, allow all letters, numbers,  and @_():/"'-=+$%#!.,;*&[]{}
 */
 
 :root {
@@ -180,6 +185,17 @@ button:focus-visible {
   opacity: 0.34;
 }
 
+.high-score-name {
+  color: #f5f5f5;
+  font-size: clamp(0.8rem, 2.2vw, 1.45rem);
+  font-weight: 800;
+  line-height: 1;
+  opacity: 0.32;
+  max-width: min(78vw, 680px);
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
 .game-shell.is-lost .center-score {
   color: #f5f5f5;
   opacity: 0.34;
@@ -189,7 +205,7 @@ button:focus-visible {
 .game-shell.is-lost .center-score-wrap {
   z-index: 4;
   align-content: center;
-  padding-bottom: clamp(96px, 24vh, 190px);
+  padding-bottom: clamp(130px, 31vh, 230px);
 }
 
 .overlay {
@@ -213,7 +229,7 @@ button:focus-visible {
 .game-shell.is-lost .overlay {
   place-content: end center;
   z-index: 3;
-  padding-bottom: max(28px, 7vh);
+  padding-bottom: max(20px, 5vh);
   background: rgba(5, 5, 5, 0.58);
   backdrop-filter: blur(8px) saturate(0.55);
 }
@@ -221,6 +237,35 @@ button:focus-visible {
 .game-shell.is-lost .overlay h1,
 .game-shell.is-lost .overlay p {
   display: none;
+}
+
+.name-form {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.name-form[hidden] {
+  display: none;
+}
+
+.name-form label {
+  color: #f5f5f5;
+  font-size: clamp(0.9rem, 2.4vw, 1.2rem);
+  opacity: 0.72;
+}
+
+.name-form input {
+  width: min(78vw, 420px);
+  min-height: 42px;
+  border: 1px solid rgba(245, 245, 245, 0.24);
+  border-radius: 6px;
+  background: rgba(10, 10, 10, 0.72);
+  color: #f5f5f5;
+  padding: 0 12px;
+  font: inherit;
+  text-align: center;
 }
 
 .overlay h1 {
@@ -283,7 +328,7 @@ button:focus-visible {
   }
 
   .game-shell.is-lost .center-score-wrap {
-    padding-bottom: clamp(52px, 19vh, 86px);
+    padding-bottom: clamp(76px, 26vh, 118px);
   }
 
   .game-shell.is-lost .overlay {

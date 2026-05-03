@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V6.3
+    Hex Rush V6.5
     2026 eriselizabeth.com
-    Updated: 2026-05-03 15:25:49 -04:00
+    Updated: 2026-05-03 16:13:42 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -96,6 +96,12 @@
     - garamond wasnt working, back to the origanal font
     - mobile rotate prompt removed, restored normal mobile behavior
     - mobile landscape browser bar was messing with the game, try fullscreen on play
+
+    V6.5 changes:
+    - added a smaller text under high score with the high score person's name
+    - added if a person beats the high score, can enter their name in the loss screen
+    - will be displayed on the loss screen under [high score]
+    - limit 40 charactors, allow all letters, numbers,  and @_():/"'-=+$%#!.,;*&[]{}
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -103,8 +109,11 @@
   const gameShell = document.querySelector(".game-shell");
   const centerScoreNode = document.getElementById("centerScore");
   const highScoreNode = document.getElementById("highScore");
+  const highScoreNameNode = document.getElementById("highScoreName");
   const overlay = document.getElementById("overlay");
   const startButton = document.getElementById("startButton");
+  const nameForm = document.getElementById("nameForm");
+  const nameInput = document.getElementById("nameInput");
   const introAudio = document.getElementById("introAudio");
   const loopAudio = document.getElementById("loopAudio");
   const introLostAudio = document.getElementById("introLostAudio");
@@ -112,6 +121,8 @@
   const music = createMusicController(introAudio, loopAudio, introLostAudio, loopLostAudio);
 
   const STORAGE_KEY = "hex-rush-best";
+  const NAME_STORAGE_KEY = "hex-rush-best-name";
+  const NAME_ALLOWED_PATTERN = /[^A-Za-z0-9 @_():/"'\-=+$%#!.,;*&[\]{}]/g;
   const TAU = Math.PI * 2;
   const SPIN_SCALE = 0.07;
   const SPEED_RAMP_SCALE = 1;
@@ -131,6 +142,8 @@
     gameOver: false,
     score: 0,
     best: Number(localStorage.getItem(STORAGE_KEY) || 0),
+    bestName: localStorage.getItem(NAME_STORAGE_KEY) || "",
+    pendingHighScoreName: false,
     time: 0,
     passiveScoreTimer: PASSIVE_SCORE_START,
     gameSpeed: 1,
@@ -192,6 +205,9 @@
     }
     centerScoreNode.textContent = "0";
     highScoreNode.hidden = true;
+    highScoreNameNode.hidden = true;
+    nameForm.hidden = true;
+    state.pendingHighScoreName = false;
     gameShell.classList.remove("is-lost");
     overlay.hidden = true;
   }
@@ -207,13 +223,22 @@
     if (state.activePointers.size > 0) {
       state.restartBlockedUntil = Infinity;
     }
-    if (state.score > state.best) {
+    const beatHighScore = state.score > state.best;
+    if (beatHighScore) {
       state.best = state.score;
       localStorage.setItem(STORAGE_KEY, String(state.best));
+      state.pendingHighScoreName = true;
     }
     centerScoreNode.textContent = state.score;
     highScoreNode.textContent = `high score: ${state.best}`;
     highScoreNode.hidden = false;
+    highScoreNameNode.textContent = state.bestName;
+    highScoreNameNode.hidden = !state.bestName;
+    nameForm.hidden = !beatHighScore;
+    if (beatHighScore) {
+      nameInput.value = "";
+      setTimeout(() => nameInput.focus({ preventScroll: true }), 0);
+    }
     gameShell.classList.add("is-lost");
     overlay.querySelector("h1").textContent = "";
     overlay.querySelector("p").textContent = "";
@@ -240,6 +265,22 @@
   function addScore(points) {
     state.score += points;
     centerScoreNode.textContent = state.score;
+  }
+
+  function cleanHighScoreName(value) {
+    return value.replace(NAME_ALLOWED_PATTERN, "").slice(0, 40);
+  }
+
+  function saveHighScoreName() {
+    if (!state.pendingHighScoreName) return;
+    const cleaned = cleanHighScoreName(nameInput.value);
+    if (!cleaned) return;
+    state.bestName = cleaned;
+    localStorage.setItem(NAME_STORAGE_KEY, state.bestName);
+    highScoreNameNode.textContent = state.bestName;
+    highScoreNameNode.hidden = false;
+    nameForm.hidden = true;
+    state.pendingHighScoreName = false;
   }
 
   function passiveScoreInterval() {
@@ -851,7 +892,16 @@
   startButton.addEventListener("pointerdown", (event) => {
     lastButtonPointerType = event.pointerType || "mouse";
   });
+  nameInput.addEventListener("input", () => {
+    const cleaned = cleanHighScoreName(nameInput.value);
+    if (nameInput.value !== cleaned) nameInput.value = cleaned;
+  });
+  nameForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveHighScoreName();
+  });
   startButton.addEventListener("click", (event) => {
+    saveHighScoreName();
     if (state.gameOver && !canClickRestart()) return;
     requestFullscreenPlay();
     const pointerStart = pointerPosition(event);
