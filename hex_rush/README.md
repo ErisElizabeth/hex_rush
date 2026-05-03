@@ -1,6 +1,24 @@
-# Hex Rush V2.0
+# Hex Rush V3.2
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## V3.2 Changes
+
+- Reduced volume by 40%
+- Increased speed of black hexagons entering another 25%
+
+## V3.1 Changes
+
+- Fixed the little audio skip by scheduling the loop after the intro with Web Audio when possible
+- Made the sound code cleaner with one music controller
+- Kept HTML audio as a backup plan for browsers or local file paths that are picky
+
+## V3.0 Changes
+
+- Added sound
+- "Digital Adrenaline" Top-Flow pixabay.com
+- `hex_audio_intro.mp3` plays first
+- `hex_audio_loop.ogg` plays in a continuous loop after that
 
 ## V2.0 Changes
 
@@ -14,6 +32,8 @@ A small embeddable HTML canvas game inspired by classic reflex Flash games. It u
 - `index.html` - page shell and HUD
 - `styles.css` - responsive full-screen game styling
 - `game.js` - game loop, controls, scoring, collision, and rendering
+- `hex_audio_intro.mp3` - intro audio
+- `hex_audio_loop.ogg` - looping audio
 
 ## Embed
 

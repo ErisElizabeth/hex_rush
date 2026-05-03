@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <!--
-      Hex Rush V2.0
+      Hex Rush V3.2
       2026 eriselizabeth.com
-      Updated: 2026-05-03 11:32:59 -04:00
+      Updated: 2026-05-03 12:29:09 -04:00
 
       Main page shell for the game. I am keeping this pretty simple on purpose:
       canvas does the drawing, the HUD shows score stuff, and the overlay handles
@@ -12,6 +12,20 @@
 
       V2.0 note: got rid of blue/yellow hexagons, and the collecter hexagone
       follows the cursor without needing mouseclicks.
+
+      V3 note:
+      added sound
+      "Digital Adrenaline" Top-Flow pixabay.com
+      hex_audio_intro.mp3 plays first
+      hex_audio_loop.ogg plays in a continuous loop after that
+
+      V3.1 note:
+      audio skips a bit, how do I fix this?
+      cleaned up the audio handoff in game.js
+
+      V3.2 note:
+      reduce volume by 40%
+      increase speed of black hexagons entering another 25%
     -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -40,6 +54,9 @@
         <button id="startButton" type="button">Play</button>
       </section>
     </main>
+
+    <audio id="introAudio" src="hex_audio_intro.mp3" preload="auto"></audio>
+    <audio id="loopAudio" src="hex_audio_loop.ogg" preload="auto" loop></audio>
 
     <script src="game.js"></script>
   </body>

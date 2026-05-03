@@ -1,7 +1,7 @@
 /*
-  Hex Rush V2.0
+  Hex Rush V3.2
   2026 eriselizabeth.com
-  Updated: 2026-05-03 11:32:59 -04:00
+  Updated: 2026-05-03 12:29:09 -04:00
 
   Styling for the game page. The goal here is "clean arcade screen" without
   needing a whole design system. I am still learning, so these sections are
@@ -9,6 +9,18 @@
 
   V2.0 note: visual style stayed mostly the same, but the game rules changed
   so the player hexagone acts more like the cursor now.
+
+  V3 note:
+  added sound
+  "Digital Adrenaline" Top-Flow pixabay.com
+
+  V3.1 note:
+  audio skips a bit, how do I fix this?
+  mostly a JavaScript cleanup, so CSS only gets the version stamp
+
+  V3.2 note:
+  reduce volume by 40%
+  increase speed of black hexagons entering another 25%
 */
 
 :root {

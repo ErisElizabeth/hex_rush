@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V2.0
+    Hex Rush V3.2
     2026 eriselizabeth.com
-    Updated: 2026-05-03 11:32:59 -04:00
+    Updated: 2026-05-03 12:29:09 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -14,6 +14,22 @@
     - the black hexagons now travel in a linear fasion, only on the x and y axis
     - all hexagons entering are 25% faster
     - the main collecter hexagone moves without mouseclicks, it becomes the cursor
+
+    V3 changes:
+    - added sound
+    - "Digital Adrenaline" Top-Flow pixabay.com
+    - hex_audio_intro.mp3 plays first
+    - hex_audio_loop.ogg plays in a continuous loop after that
+
+    V3.1 changes:
+    - audio skips a bit, how do I fix this?
+    - cleaned up the sound into a music controller
+    - Web Audio schedules the loop right after the intro when the browser lets me
+    - HTML audio is still here as the backup plan because file paths can be picky
+
+    V3.2 changes:
+    - reduce volume by 40%
+    - increase speed of black hexagons entering another 25%
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -23,6 +39,9 @@
   const overlay = document.getElementById("overlay");
   const startButton = document.getElementById("startButton");
   const pauseButton = document.getElementById("pauseButton");
+  const introAudio = document.getElementById("introAudio");
+  const loopAudio = document.getElementById("loopAudio");
+  const music = createMusicController(introAudio, loopAudio);
 
   const STORAGE_KEY = "hex-rush-best";
   const TAU = Math.PI * 2;
@@ -64,6 +83,7 @@
 
   function start() {
     // Reset all the moving parts back to a fresh run.
+    startAudio();
     state.running = true;
     state.paused = false;
     state.gameOver = false;
@@ -107,13 +127,157 @@
     pauseButton.textContent = state.paused ? ">" : "II";
     pauseButton.setAttribute("aria-label", state.paused ? "Resume game" : "Pause game");
     if (state.paused) {
+      pauseAudio();
       overlay.querySelector("h1").textContent = "Paused";
       overlay.querySelector("p").textContent = "Take a breath. The hexagons will wait.";
       startButton.textContent = "Resume";
       overlay.hidden = false;
     } else {
+      resumeAudio();
       overlay.hidden = true;
     }
+  }
+
+  function startAudio() {
+    // V3.1: this starts the music controller instead of juggling audio here.
+    music.start();
+  }
+
+  function pauseAudio() {
+    // Keep pause simple: the music controller remembers what it was doing.
+    music.pause();
+  }
+
+  function resumeAudio() {
+    music.resume();
+  }
+
+  function createMusicController(intro, loop) {
+    /*
+      V3.1/V3.2 cleaner sound thinking:
+      Two audio tags can skip because the loop starts after an "ended" event.
+      Web Audio lets me schedule the loop before the intro finishes, which is
+      the cleaner fix. If the browser does not allow that, the old way still works.
+      V3.2 reduces volume by 40%, so playback runs at 60% volume.
+    */
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    let context = null;
+    let volume = null;
+    let introBuffer = null;
+    let loopBuffer = null;
+    let introSource = null;
+    let loopSource = null;
+    let startTime = 0;
+    let started = false;
+    let paused = false;
+    let usingWebAudio = false;
+
+    const loaded = loadBuffers();
+
+    intro.addEventListener("ended", () => {
+      if (usingWebAudio) return;
+      loop.currentTime = 0;
+      loop.play().catch(() => {});
+    });
+
+    async function loadBuffers() {
+      if (!AudioContextClass) return false;
+
+      try {
+        context = new AudioContextClass();
+        volume = context.createGain();
+        volume.gain.value = 0.6;
+        volume.connect(context.destination);
+        const [introData, loopData] = await Promise.all([
+          fetch(intro.currentSrc || intro.src).then((response) => response.arrayBuffer()),
+          fetch(loop.currentSrc || loop.src).then((response) => response.arrayBuffer())
+        ]);
+        [introBuffer, loopBuffer] = await Promise.all([
+          context.decodeAudioData(introData),
+          context.decodeAudioData(loopData)
+        ]);
+        return true;
+      } catch {
+        // If local file loading blocks fetch, the HTML audio fallback handles it.
+        context = null;
+        return false;
+      }
+    }
+
+    function stopSources() {
+      for (const source of [introSource, loopSource]) {
+        if (!source) continue;
+        try {
+          source.stop();
+        } catch {}
+      }
+      introSource = null;
+      loopSource = null;
+    }
+
+    function playHtmlFromStart() {
+      usingWebAudio = false;
+      intro.volume = 0.6;
+      loop.volume = 0.6;
+      loop.pause();
+      loop.currentTime = 0;
+      intro.currentTime = 0;
+      intro.play().catch(() => {
+        started = false;
+      });
+    }
+
+    async function start() {
+      if (started) return;
+      started = true;
+      paused = false;
+
+      if (!(await loaded) || !context || !introBuffer || !loopBuffer) {
+        playHtmlFromStart();
+        return;
+      }
+
+      usingWebAudio = true;
+      await context.resume();
+      stopSources();
+
+      introSource = context.createBufferSource();
+      introSource.buffer = introBuffer;
+      introSource.connect(volume);
+
+      loopSource = context.createBufferSource();
+      loopSource.buffer = loopBuffer;
+      loopSource.loop = true;
+      loopSource.connect(volume);
+
+      startTime = context.currentTime + 0.03;
+      introSource.start(startTime);
+      loopSource.start(startTime + introBuffer.duration);
+    }
+
+    function pause() {
+      if (!started || paused) return;
+      paused = true;
+      if (usingWebAudio && context) {
+        context.suspend();
+        return;
+      }
+      intro.pause();
+      loop.pause();
+    }
+
+    function resume() {
+      if (!started || !paused) return;
+      paused = false;
+      if (usingWebAudio && context) {
+        context.resume();
+        return;
+      }
+      const activeAudio = intro.ended ? loop : intro;
+      activeAudio.play().catch(() => {});
+    }
+
+    return { start, pause, resume };
   }
 
   function spawn(type) {
@@ -121,6 +285,7 @@
     const edge = Math.floor(Math.random() * 4);
     const margin = 40;
     const speedMultiplier = 1.25;
+    const blackHexagonSpeedMultiplier = 1.25;
     const size = type === "hazard" ? rand(15, 28) : rand(13, 23);
     let x = rand(-margin, state.width + margin);
     let y = rand(-margin, state.height + margin);
@@ -134,8 +299,10 @@
     let vy = 0;
 
     if (type === "score") {
+      // V3.2: black hexagons entering are another 25% faster.
+      const blackBaseSpeed = baseSpeed * blackHexagonSpeedMultiplier;
       // V2.0: black hexagons travel in a linear fasion, only on the x and y axis.
-      const speed = rand(baseSpeed * 0.65, baseSpeed);
+      const speed = rand(blackBaseSpeed * 0.65, blackBaseSpeed);
       const direction = edge === 0 || edge === 3 ? 1 : -1;
       if (edge === 0 || edge === 2) {
         vy = speed * direction;
@@ -386,6 +553,7 @@
   startButton.addEventListener("click", () => {
     if (state.paused) {
       state.paused = false;
+      resumeAudio();
       overlay.hidden = true;
       pauseButton.textContent = "II";
       pauseButton.setAttribute("aria-label", "Pause game");
