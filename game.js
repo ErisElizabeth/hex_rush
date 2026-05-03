@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V4.1
+    Hex Rush V4.2
     2026 eriselizabeth.com
-    Updated: 2026-05-03 13:29:50 -04:00
+    Updated: 2026-05-03 13:38:05 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -43,6 +43,12 @@
     - game automatically restarts on mobil without tapping anything
     - need to fix this so that it only restarts after clicking
     - ohh, I'm dumb, it must be about the "no need to click" to move the cursur function
+
+    V4.2 changes:
+    - if the screen isn't being touched, acts like it should upon game over
+    - if the screen is being touched, automatically restarts
+    - how to get this to behave on a touchscreen???
+    - block the old touch release from becoming a Play Again click
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -75,6 +81,8 @@
     spawnTimer: 0,
     hazardTimer: 0,
     pointerReady: false,
+    activePointers: new Set(),
+    restartBlockedUntil: 0,
     keys: new Set(),
     target: { x: 0, y: 0 },
     player: { x: 0, y: 0, radius: 22, angle: 0, speed: 760 },
@@ -124,6 +132,9 @@
     music.lose();
     state.gameOver = true;
     state.running = false;
+    if (state.activePointers.size > 0) {
+      state.restartBlockedUntil = Infinity;
+    }
     if (state.score > state.best) {
       state.best = state.score;
       localStorage.setItem(STORAGE_KEY, String(state.best));
@@ -162,6 +173,18 @@
   function canAutoStart() {
     // V4.1: pointer movement can start the first game, but Play Again needs an actual click/tap.
     return !state.running && !state.paused && !state.gameOver;
+  }
+
+  function canClickRestart() {
+    // V4.2: if game over happens while a finger is still down, ignore that old release/click.
+    return performance.now() >= state.restartBlockedUntil;
+  }
+
+  function releasePointer(pointerId) {
+    state.activePointers.delete(pointerId);
+    if (state.gameOver && state.activePointers.size === 0) {
+      state.restartBlockedUntil = performance.now() + 450;
+    }
   }
 
   function pauseAudio() {
@@ -639,6 +662,7 @@
   // Pointer events cover mouse, touch, and stylus in one set of handlers.
   canvas.addEventListener("pointerdown", (event) => {
     canvas.setPointerCapture(event.pointerId);
+    state.activePointers.add(event.pointerId);
     state.pointerReady = true;
     Object.assign(state.target, pointerPosition(event));
     if (canAutoStart()) start();
@@ -650,10 +674,12 @@
     Object.assign(state.target, pointerPosition(event));
     if (canAutoStart()) start();
   });
-  canvas.addEventListener("pointerup", () => {
+  canvas.addEventListener("pointerup", (event) => {
+    releasePointer(event.pointerId);
     state.pointerReady = true;
   });
-  canvas.addEventListener("pointercancel", () => {
+  canvas.addEventListener("pointercancel", (event) => {
+    releasePointer(event.pointerId);
     state.pointerReady = false;
   });
 
@@ -669,6 +695,7 @@
   window.addEventListener("keyup", (event) => state.keys.delete(event.code));
 
   startButton.addEventListener("click", () => {
+    if (state.gameOver && !canClickRestart()) return;
     if (state.paused) {
       state.paused = false;
       resumeAudio();

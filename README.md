@@ -1,6 +1,13 @@
-# Hex Rush V4.1
+# Hex Rush V4.2
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## V4.2 Changes
+
+- Fixed the touchscreen case where holding the screen during game over could automatically restart
+- Tracks active touches while the game is running
+- Blocks the old touch release from becoming a Play Again click
+- how to get this to behave on a touchscreen???
 
 ## V4.1 Changes
 
