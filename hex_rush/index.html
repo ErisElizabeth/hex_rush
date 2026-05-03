@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <!--
-      Hex Rush V3.2
+      Hex Rush V4.0
       2026 eriselizabeth.com
-      Updated: 2026-05-03 12:29:09 -04:00
+      Updated: 2026-05-03 12:58:59 -04:00
 
       Main page shell for the game. I am keeping this pretty simple on purpose:
       canvas does the drawing, the HUD shows score stuff, and the overlay handles
@@ -26,6 +26,13 @@
       V3.2 note:
       reduce volume by 40%
       increase speed of black hexagons entering another 25%
+
+      V4 note:
+      I don't even know if this is possable lol
+      if the player looses, swap to the matching lost audio at the same time
+      follow hex_audio_intro_lost.mp3 with continuous loop of hex_audio_loop_lost.ogg
+      if the player chooses to play again, swap back to normal audio at the same time on the file
+      fingers crossed let's see
     -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -57,6 +64,8 @@
 
     <audio id="introAudio" src="hex_audio_intro.mp3" preload="auto"></audio>
     <audio id="loopAudio" src="hex_audio_loop.ogg" preload="auto" loop></audio>
+    <audio id="introLostAudio" src="hex_audio_intro_lost.mp3" preload="auto"></audio>
+    <audio id="loopLostAudio" src="hex_audio_loop_lost.ogg" preload="auto" loop></audio>
 
     <script src="game.js"></script>
   </body>

@@ -1,7 +1,7 @@
 /*
-  Hex Rush V3.2
+  Hex Rush V4.0
   2026 eriselizabeth.com
-  Updated: 2026-05-03 12:29:09 -04:00
+  Updated: 2026-05-03 12:58:59 -04:00
 
   Styling for the game page. The goal here is "clean arcade screen" without
   needing a whole design system. I am still learning, so these sections are
@@ -21,6 +21,10 @@
   V3.2 note:
   reduce volume by 40%
   increase speed of black hexagons entering another 25%
+
+  V4 note:
+  I don't even know if this is possable lol
+  audio changes are in game.js, CSS only gets the version stamp
 */
 
 :root {

@@ -1,6 +1,15 @@
-# Hex Rush V3.2
+# Hex Rush V4.0
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## V4.0 Changes
+
+- Added lost-state audio
+- If the player looses during the normal intro, the game swaps to `hex_audio_intro_lost.mp3` at the same file time
+- If the player looses during the normal loop, the game swaps to `hex_audio_loop_lost.ogg` at the same file time
+- `hex_audio_intro_lost.mp3` is followed by the continuous lost loop
+- If the player chooses to play again in the same window, the music swaps back to the matching normal file at the same file time
+- Fingers crossed let's see
 
 ## V3.2 Changes
 
@@ -34,6 +43,8 @@ A small embeddable HTML canvas game inspired by classic reflex Flash games. It u
 - `game.js` - game loop, controls, scoring, collision, and rendering
 - `hex_audio_intro.mp3` - intro audio
 - `hex_audio_loop.ogg` - looping audio
+- `hex_audio_intro_lost.mp3` - lost intro audio
+- `hex_audio_loop_lost.ogg` - lost looping audio
 
 ## Embed
 

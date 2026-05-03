@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V3.2
+    Hex Rush V4.0
     2026 eriselizabeth.com
-    Updated: 2026-05-03 12:29:09 -04:00
+    Updated: 2026-05-03 12:58:59 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -30,6 +30,14 @@
     V3.2 changes:
     - reduce volume by 40%
     - increase speed of black hexagons entering another 25%
+
+    V4 changes:
+    - I don't even know if this is possable lol
+    - if the player looses the game while normal audio is playing, jump to lost audio
+    - the lost file starts at the same time position as the file it replaces
+    - hex_audio_intro_lost.mp3 leads into hex_audio_loop_lost.ogg
+    - play again swaps back to normal audio at the same time on the file
+    - fingers crossed let's see
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -41,7 +49,9 @@
   const pauseButton = document.getElementById("pauseButton");
   const introAudio = document.getElementById("introAudio");
   const loopAudio = document.getElementById("loopAudio");
-  const music = createMusicController(introAudio, loopAudio);
+  const introLostAudio = document.getElementById("introLostAudio");
+  const loopLostAudio = document.getElementById("loopLostAudio");
+  const music = createMusicController(introAudio, loopAudio, introLostAudio, loopLostAudio);
 
   const STORAGE_KEY = "hex-rush-best";
   const TAU = Math.PI * 2;
@@ -106,6 +116,7 @@
 
   function endGame() {
     // Save best score locally in this browser, then show the replay screen.
+    music.lose();
     state.gameOver = true;
     state.running = false;
     if (state.score > state.best) {
@@ -139,8 +150,8 @@
   }
 
   function startAudio() {
-    // V3.1: this starts the music controller instead of juggling audio here.
-    music.start();
+    // V4: play again swaps back to normal audio at the same time on the file.
+    music.playNormal();
   }
 
   function pauseAudio() {
@@ -152,107 +163,205 @@
     music.resume();
   }
 
-  function createMusicController(intro, loop) {
+  function createMusicController(normalIntro, normalLoop, lostIntro, lostLoop) {
     /*
-      V3.1/V3.2 cleaner sound thinking:
-      Two audio tags can skip because the loop starts after an "ended" event.
-      Web Audio lets me schedule the loop before the intro finishes, which is
-      the cleaner fix. If the browser does not allow that, the old way still works.
-      V3.2 reduces volume by 40%, so playback runs at 60% volume.
+      V4 music thinking:
+      This is the "is this possable lol" part. The answer is yes-ish: if the
+      normal and lost files are musically lined up, I can read the current time
+      position and start the replacement file at that same position. A tiny
+      crossfade hides the switch better than a hard cut.
     */
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    const tracks = {
+      normal: { intro: normalIntro, loop: normalLoop },
+      lost: { intro: lostIntro, loop: lostLoop }
+    };
+    const buffers = { normal: {}, lost: {} };
+    const active = [];
     let context = null;
-    let volume = null;
-    let introBuffer = null;
-    let loopBuffer = null;
-    let introSource = null;
-    let loopSource = null;
-    let startTime = 0;
+    let master = null;
     let started = false;
     let paused = false;
     let usingWebAudio = false;
+    let mode = "normal";
+    let section = "intro";
+    let sectionStart = 0;
+    let loaded = loadBuffers();
 
-    const loaded = loadBuffers();
-
-    intro.addEventListener("ended", () => {
-      if (usingWebAudio) return;
-      loop.currentTime = 0;
-      loop.play().catch(() => {});
-    });
+    for (const trackMode of Object.keys(tracks)) {
+      tracks[trackMode].intro.volume = 0.6;
+      tracks[trackMode].loop.volume = 0.6;
+      tracks[trackMode].loop.loop = true;
+      tracks[trackMode].intro.addEventListener("ended", () => {
+        if (usingWebAudio || mode !== trackMode) return;
+        playHtml(trackMode, "loop", 0);
+      });
+    }
 
     async function loadBuffers() {
       if (!AudioContextClass) return false;
 
       try {
         context = new AudioContextClass();
-        volume = context.createGain();
-        volume.gain.value = 0.6;
-        volume.connect(context.destination);
-        const [introData, loopData] = await Promise.all([
-          fetch(intro.currentSrc || intro.src).then((response) => response.arrayBuffer()),
-          fetch(loop.currentSrc || loop.src).then((response) => response.arrayBuffer())
-        ]);
-        [introBuffer, loopBuffer] = await Promise.all([
-          context.decodeAudioData(introData),
-          context.decodeAudioData(loopData)
-        ]);
+        master = context.createGain();
+        master.gain.value = 0.6;
+        master.connect(context.destination);
+
+        const entries = [
+          ["normal", "intro", normalIntro],
+          ["normal", "loop", normalLoop],
+          ["lost", "intro", lostIntro],
+          ["lost", "loop", lostLoop]
+        ];
+        const decoded = await Promise.all(entries.map(async ([trackMode, trackSection, element]) => {
+          const data = await fetch(element.currentSrc || element.src).then((response) => response.arrayBuffer());
+          const buffer = await context.decodeAudioData(data);
+          return [trackMode, trackSection, buffer];
+        }));
+        for (const [trackMode, trackSection, buffer] of decoded) {
+          buffers[trackMode][trackSection] = buffer;
+        }
         return true;
       } catch {
-        // If local file loading blocks fetch, the HTML audio fallback handles it.
+        // Local file pages can block fetch. The HTML audio fallback is less fancy, but still works.
         context = null;
         return false;
       }
     }
 
-    function stopSources() {
-      for (const source of [introSource, loopSource]) {
-        if (!source) continue;
-        try {
-          source.stop();
-        } catch {}
+    function currentPosition() {
+      if (!started) return { section: "intro", offset: 0 };
+      if (!usingWebAudio || !context) {
+        const introElement = tracks[mode].intro;
+        const loopElement = tracks[mode].loop;
+        return introElement.paused && !loopElement.paused
+          ? { section: "loop", offset: loopElement.currentTime }
+          : { section: "intro", offset: introElement.currentTime };
       }
-      introSource = null;
-      loopSource = null;
+
+      const elapsed = Math.max(0, context.currentTime - sectionStart);
+      const buffer = buffers[mode][section];
+      if (section === "loop" && buffer?.duration) {
+        return { section, offset: elapsed % buffer.duration };
+      }
+      return { section, offset: Math.min(elapsed, buffer?.duration || elapsed) };
     }
 
-    function playHtmlFromStart() {
+    function stopSource(item, when = context?.currentTime || 0) {
+      if (!item) return;
+      try {
+        item.source.stop(when);
+      } catch {}
+    }
+
+    function clearActive() {
+      while (active.length) stopSource(active.pop());
+    }
+
+    function makeSource(trackMode, trackSection, offset, when, gainValue) {
+      const buffer = buffers[trackMode][trackSection];
+      const source = context.createBufferSource();
+      const gain = context.createGain();
+      source.buffer = buffer;
+      source.loop = trackSection === "loop";
+      gain.gain.setValueAtTime(gainValue, when);
+      source.connect(gain);
+      gain.connect(master);
+      source.start(when, Math.min(offset, Math.max(0, buffer.duration - 0.01)));
+      const item = { source, gain, mode: trackMode, section: trackSection, startTime: when, offset };
+      active.push(item);
+      source.addEventListener("ended", () => {
+        const index = active.indexOf(item);
+        if (index >= 0) active.splice(index, 1);
+      });
+      return item;
+    }
+
+    function scheduleWebAudio(trackMode, trackSection, offset, shouldCrossfade) {
+      const now = context.currentTime;
+      const fade = shouldCrossfade ? 0.22 : 0.01;
+      const when = now + 0.02;
+
+      for (const item of active) {
+        item.gain.gain.cancelScheduledValues(now);
+        item.gain.gain.setValueAtTime(item.gain.gain.value, now);
+        item.gain.gain.linearRampToValueAtTime(0, now + fade);
+        stopSource(item, now + fade + 0.04);
+      }
+      active.length = 0;
+
+      const first = makeSource(trackMode, trackSection, offset, when, shouldCrossfade ? 0 : 1);
+      first.gain.gain.linearRampToValueAtTime(1, now + fade);
+      mode = trackMode;
+      section = trackSection;
+      sectionStart = when - offset;
+
+      if (trackSection === "intro") {
+        const introBuffer = buffers[trackMode].intro;
+        const remaining = Math.max(0.01, introBuffer.duration - offset);
+        const loopWhen = when + remaining;
+        makeSource(trackMode, "loop", 0, loopWhen, 1);
+        first.source.addEventListener("ended", () => {
+          if (mode === trackMode) {
+            section = "loop";
+            sectionStart = loopWhen;
+          }
+        });
+      }
+    }
+
+    function pauseAllHtml() {
+      for (const trackMode of Object.keys(tracks)) {
+        tracks[trackMode].intro.pause();
+        tracks[trackMode].loop.pause();
+      }
+    }
+
+    function playHtml(trackMode, trackSection, offset) {
       usingWebAudio = false;
-      intro.volume = 0.6;
-      loop.volume = 0.6;
-      loop.pause();
-      loop.currentTime = 0;
-      intro.currentTime = 0;
-      intro.play().catch(() => {
+      pauseAllHtml();
+      const element = tracks[trackMode][trackSection];
+      element.currentTime = Math.min(offset, Math.max(0, (element.duration || offset + 1) - 0.01));
+      element.play().catch(() => {
         started = false;
       });
+      mode = trackMode;
+      section = trackSection;
     }
 
-    async function start() {
-      if (started) return;
-      started = true;
-      paused = false;
+    async function switchTo(trackMode) {
+      const position = currentPosition();
+      const targetSection = position.section;
+      const targetElement = tracks[trackMode][targetSection];
+      const offset = targetElement.duration
+        ? position.offset % targetElement.duration
+        : position.offset;
 
-      if (!(await loaded) || !context || !introBuffer || !loopBuffer) {
-        playHtmlFromStart();
+      if (!(await loaded) || !context || !buffers[trackMode].intro || !buffers[trackMode].loop) {
+        playHtml(trackMode, targetSection, offset);
         return;
       }
 
       usingWebAudio = true;
       await context.resume();
-      stopSources();
+      pauseAllHtml();
+      scheduleWebAudio(trackMode, targetSection, offset, started);
+    }
 
-      introSource = context.createBufferSource();
-      introSource.buffer = introBuffer;
-      introSource.connect(volume);
+    async function playNormal() {
+      if (!started) {
+        started = true;
+        paused = false;
+        await switchTo("normal");
+        return;
+      }
+      paused = false;
+      await switchTo("normal");
+    }
 
-      loopSource = context.createBufferSource();
-      loopSource.buffer = loopBuffer;
-      loopSource.loop = true;
-      loopSource.connect(volume);
-
-      startTime = context.currentTime + 0.03;
-      introSource.start(startTime);
-      loopSource.start(startTime + introBuffer.duration);
+    async function lose() {
+      if (!started || mode === "lost") return;
+      await switchTo("lost");
     }
 
     function pause() {
@@ -262,8 +371,7 @@
         context.suspend();
         return;
       }
-      intro.pause();
-      loop.pause();
+      tracks[mode][section].pause();
     }
 
     function resume() {
@@ -273,11 +381,10 @@
         context.resume();
         return;
       }
-      const activeAudio = intro.ended ? loop : intro;
-      activeAudio.play().catch(() => {});
+      tracks[mode][section].play().catch(() => {});
     }
 
-    return { start, pause, resume };
+    return { playNormal, lose, pause, resume };
   }
 
   function spawn(type) {
