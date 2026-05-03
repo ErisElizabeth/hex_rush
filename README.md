@@ -1,6 +1,13 @@
-# Hex Rush V4.0
+# Hex Rush V4.1
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## V4.1 Changes
+
+- Fixed mobile auto-restart after losing
+- Pointer movement can still start the first game
+- After game over, Play Again now needs an actual click/tap
+- ohh, I'm dumb, it must be about the "no need to click" to move the cursur function
 
 ## V4.0 Changes
 

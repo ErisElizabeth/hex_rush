@@ -1,7 +1,7 @@
 /*
-  Hex Rush V4.0
+  Hex Rush V4.1
   2026 eriselizabeth.com
-  Updated: 2026-05-03 12:58:59 -04:00
+  Updated: 2026-05-03 13:29:50 -04:00
 
   Styling for the game page. The goal here is "clean arcade screen" without
   needing a whole design system. I am still learning, so these sections are
@@ -25,6 +25,10 @@
   V4 note:
   I don't even know if this is possable lol
   audio changes are in game.js, CSS only gets the version stamp
+
+  V4.1 note:
+  game automatically restarts on mobil without tapping anything
+  fixed in JavaScript, CSS only gets the version stamp
 */
 
 :root {

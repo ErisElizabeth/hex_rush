@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V4.0
+    Hex Rush V4.1
     2026 eriselizabeth.com
-    Updated: 2026-05-03 12:58:59 -04:00
+    Updated: 2026-05-03 13:29:50 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -38,6 +38,11 @@
     - hex_audio_intro_lost.mp3 leads into hex_audio_loop_lost.ogg
     - play again swaps back to normal audio at the same time on the file
     - fingers crossed let's see
+
+    V4.1 changes:
+    - game automatically restarts on mobil without tapping anything
+    - need to fix this so that it only restarts after clicking
+    - ohh, I'm dumb, it must be about the "no need to click" to move the cursur function
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -152,6 +157,11 @@
   function startAudio() {
     // V4: play again swaps back to normal audio at the same time on the file.
     music.playNormal();
+  }
+
+  function canAutoStart() {
+    // V4.1: pointer movement can start the first game, but Play Again needs an actual click/tap.
+    return !state.running && !state.paused && !state.gameOver;
   }
 
   function pauseAudio() {
@@ -631,13 +641,14 @@
     canvas.setPointerCapture(event.pointerId);
     state.pointerReady = true;
     Object.assign(state.target, pointerPosition(event));
-    if (!state.running && !state.paused) start();
+    if (canAutoStart()) start();
   });
   canvas.addEventListener("pointermove", (event) => {
     // V2.0: movement updates even without pressing, so the player becomes the cursor.
+    // V4.1: after losing, this can move the cursor but cannot restart the game by itself.
     state.pointerReady = true;
     Object.assign(state.target, pointerPosition(event));
-    if (!state.running && !state.paused) start();
+    if (canAutoStart()) start();
   });
   canvas.addEventListener("pointerup", () => {
     state.pointerReady = true;
@@ -651,7 +662,7 @@
     state.keys.add(event.code);
     if (event.code === "Space") {
       event.preventDefault();
-      if (!state.running && !state.paused) start();
+      if (canAutoStart() || state.gameOver) start();
       else togglePause();
     }
   });
