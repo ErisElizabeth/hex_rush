@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <!--
-      Hex Rush V7.2
+      Hex Rush V7.6
       2026 eriselizabeth.com
-      Updated: 2026-05-04 02:36:28 -04:00
+      Updated: 2026-05-04 02:49:19 -04:00
 
       Main page shell for the game. I am keeping this pretty simple on purpose:
       canvas does the drawing, the HUD shows score stuff, and the overlay handles
@@ -121,11 +121,23 @@
 
       V7.2 note:
       mobile high-score name entry is easier to see, with an enter button under the text box
+
+      V7.3 note:
+      patched start/again button behavior around the high-score name entry screen
+
+      V7.4 note:
+      unblocked play/again so name entry can never trap the user
+
+      V7.5 note:
+      removed cache query tags because opening index.html directly from the computer can break them
+
+      V7.6 note:
+      fixed the first play button by moving music constants before the music controller starts
     -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>hex rush</title>
-    <link rel="stylesheet" href="styles.css?v=7.2">
+    <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <main class="game-shell" aria-label="hex rush game">
@@ -157,6 +169,6 @@
     <audio id="introLostAudio" src="hex_audio_intro_lost.mp3" preload="auto"></audio>
     <audio id="loopLostAudio" src="hex_audio_loop_lost.ogg" preload="auto" loop></audio>
 
-    <script src="game.js?v=7.2"></script>
+    <script src="game.js"></script>
   </body>
 </html>

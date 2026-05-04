@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V7.2
+    Hex Rush V7.6
     2026 eriselizabeth.com
-    Updated: 2026-05-04 02:36:28 -04:00
+    Updated: 2026-05-04 02:49:19 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -130,6 +130,22 @@
     V7.2 changes:
     - mobile high-score name entry is easier to see
     - save button now says enter and sits under the text box
+
+    V7.3 changes:
+    - patched the start/again button getting tangled with high-score name entry
+    - again? waits until the new high-score name is entered
+
+    V7.4 changes:
+    - unblocked play/again so name entry can never trap the user
+    - enter still saves the name, but again? can start another run
+
+    V7.5 changes:
+    - local file fix: index.html uses plain styles.css and game.js again
+    - added a little click log so I can tell if the play button is wired
+
+    V7.6 changes:
+    - fixed play button by moving music constants before the music controller starts
+    - yes, this was one of those tiny-order-of-things JavaScript faceplants
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -145,6 +161,8 @@
   const startButton = document.getElementById("startButton");
   const nameForm = document.getElementById("nameForm");
   const nameInput = document.getElementById("nameInput");
+  const MUSIC_VOLUME = 0.6;
+  const MUSIC_ATTENTION_FADE_SECONDS = 3;
   const introAudio = document.getElementById("introAudio");
   const loopAudio = document.getElementById("loopAudio");
   const introLostAudio = document.getElementById("introLostAudio");
@@ -165,8 +183,6 @@
   const PASSIVE_SCORE_START = 1;
   const PASSIVE_SCORE_INTERVAL = 5;
   const PASSIVE_SCORE_SPEEDUP = 0.9;
-  const MUSIC_VOLUME = 0.6;
-  const MUSIC_ATTENTION_FADE_SECONDS = 3;
   let lastButtonPointerType = "mouse";
 
   // Everything the game needs to remember lives here so I can find it again.
@@ -245,6 +261,7 @@
     highScoreNode.hidden = true;
     highScoreNameNode.hidden = true;
     nameForm.hidden = true;
+    startButton.hidden = false;
     state.pendingHighScoreName = false;
     gameShell.classList.remove("is-lost");
     gameShell.classList.remove("is-naming");
@@ -275,12 +292,14 @@
     nameForm.hidden = !beatHighScore;
     if (beatHighScore) {
       nameInput.value = "";
+      startButton.hidden = false;
       gameShell.classList.add("is-naming");
       setTimeout(() => {
         nameInput.focus();
         nameInput.scrollIntoView({ block: "center", inline: "nearest" });
       }, 0);
     } else {
+      startButton.hidden = false;
       gameShell.classList.remove("is-naming");
     }
     gameShell.classList.add("is-lost");
@@ -420,6 +439,7 @@
     nameForm.hidden = true;
     gameShell.classList.remove("is-naming");
     state.pendingHighScoreName = false;
+    startButton.hidden = false;
     saveRemoteHighScore();
   }
 
@@ -1085,7 +1105,10 @@
     saveHighScoreName();
   });
   startButton.addEventListener("click", (event) => {
-    saveHighScoreName();
+    console.info("[hex rush] play button clicked");
+    if (state.pendingHighScoreName) {
+      saveHighScoreName();
+    }
     if (state.gameOver && !canClickRestart()) return;
     requestFullscreenPlay();
     const pointerStart = pointerPosition(event);

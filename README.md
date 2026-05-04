@@ -1,6 +1,28 @@
-# hex rush v7.2
+# hex rush v7.6
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## v7.6 changes
+
+- fixed the first-screen play button by moving music constants before the music controller starts
+- this fixes the runtime crash that stopped the click listener from getting attached
+
+## v7.5 changes
+
+- removed cache query tags from `index.html` so opening the file directly from the computer loads `styles.css` and `game.js` plainly
+- added a small console note when the play button click handler fires
+
+## v7.4 changes
+
+- unblocked play/again so high-score name entry can never trap the user
+- `enter` still saves the name, but `again?` can start another run
+- bumped cache tags to `?v=7.4`
+
+## v7.3 changes
+
+- patched start/again button behavior around high-score name entry
+- `again?` now waits until the new high-score name is entered
+- bumped cache tags to `?v=7.3`
 
 ## v7.2 changes
 
