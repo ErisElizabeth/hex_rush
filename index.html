@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <!--
-      Hex Rush V6.7
+      Hex Rush V6.8
       2026 eriselizabeth.com
-      Updated: 2026-05-03 21:41:54 -04:00
+      Updated: 2026-05-03 21:47:08 -04:00
 
       Main page shell for the game. I am keeping this pretty simple on purpose:
       canvas does the drawing, the HUD shows score stuff, and the overlay handles
@@ -104,11 +104,15 @@
 
       V6.7 note:
       high score actively retreives from Supabase on load, play, loss, and after saving a name
+
+      V6.8 note:
+      database high score/name now displays on the opening screen too
+      added console notes so I can see if Supabase is loading, saving, or failing
     -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>hex rush</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=6.8">
   </head>
   <body>
     <main class="game-shell" aria-label="hex rush game">
@@ -136,6 +140,6 @@
     <audio id="introLostAudio" src="hex_audio_intro_lost.mp3" preload="auto"></audio>
     <audio id="loopLostAudio" src="hex_audio_loop_lost.ogg" preload="auto" loop></audio>
 
-    <script src="game.js"></script>
+    <script src="game.js?v=6.8"></script>
   </body>
 </html>

@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V6.7
+    Hex Rush V6.8
     2026 eriselizabeth.com
-    Updated: 2026-05-03 21:41:54 -04:00
+    Updated: 2026-05-03 21:47:08 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -110,6 +110,10 @@
     V6.7 changes:
     - high score actively retreives from Supabase on load, play, loss, and after saving a name
     - this should stop phone and desktop from living in two seperate high score worlds
+
+    V6.8 changes:
+    - database high score/name now displays on the opening screen too
+    - added console notes so I can see if Supabase is loading, saving, or failing
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -290,6 +294,11 @@
     highScoreNameNode.hidden = !state.bestName;
   }
 
+  function showHighScoreDisplay() {
+    highScoreNode.hidden = false;
+    updateHighScoreDisplay();
+  }
+
   function supabaseHeaders() {
     return {
       apikey: SUPABASE_ANON_KEY,
@@ -312,16 +321,27 @@
       state.bestName = row.player_name || "";
       state.usingRemoteScore = true;
       saveLocalHighScore();
-      if (state.gameOver || !highScoreNode.hidden) {
-        updateHighScoreDisplay();
+      console.info("[hex rush] Supabase high score loaded", {
+        highScore: state.best,
+        playerName: state.bestName || "(no name yet)"
+      });
+      if (!state.running || state.gameOver || !highScoreNode.hidden) {
+        showHighScoreDisplay();
       }
-    } catch {
+    } catch (error) {
       state.usingRemoteScore = false;
+      console.warn("[hex rush] Supabase high score could not load, using this browser's saved score", error);
+      if (!state.running || state.gameOver || !highScoreNode.hidden) {
+        showHighScoreDisplay();
+      }
     }
   }
 
   async function saveRemoteHighScore() {
-    if (!state.usingRemoteScore) return;
+    if (!state.usingRemoteScore) {
+      console.warn("[hex rush] Supabase save skipped because the database is not connected right now");
+      return;
+    }
     try {
       const response = await fetch(`${SUPABASE_SCORE_ENDPOINT}?id=eq.${SUPABASE_SCORE_ROW}&high_score=lt.${state.best}`, {
         method: "PATCH",
@@ -333,9 +353,14 @@
         })
       });
       if (!response.ok) throw new Error("score save failed");
+      console.info("[hex rush] Supabase high score save attempted", {
+        highScore: state.best,
+        playerName: state.bestName || "(no name yet)"
+      });
       await loadRemoteHighScore();
-    } catch {
+    } catch (error) {
       state.usingRemoteScore = false;
+      console.warn("[hex rush] Supabase high score could not save", error);
     }
   }
 
