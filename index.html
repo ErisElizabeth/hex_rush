@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <!--
-      Hex Rush V6.5
+      Hex Rush V6.6
       2026 eriselizabeth.com
-      Updated: 2026-05-03 16:13:42 -04:00
+      Updated: 2026-05-03 21:27:01 -04:00
 
       Main page shell for the game. I am keeping this pretty simple on purpose:
       canvas does the drawing, the HUD shows score stuff, and the overlay handles
@@ -97,6 +97,10 @@
       added if a person beats the high score, can enter their name in the loss screen
       will be displayed on the loss screen under [high score]
       limit 40 charactors, allow all letters, numbers,  and @_():/"'-=+$%#!.,;*&[]{}
+
+      V6.6 note:
+      high score can load/save from Supabase so all users see the same score
+      localStorage stays as the fallback if database is not available
     -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">

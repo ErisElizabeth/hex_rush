@@ -1,7 +1,7 @@
 /*
-  Hex Rush V6.5
+  Hex Rush V6.6
   2026 eriselizabeth.com
-  Updated: 2026-05-03 16:13:42 -04:00
+  Updated: 2026-05-03 21:27:01 -04:00
 
   Styling for the game page. The goal here is "clean arcade screen" without
   needing a whole design system. I am still learning, so these sections are
@@ -82,6 +82,10 @@
   added a smaller text under high score with the high score person's name
   added if a person beats the high score, can enter their name in the loss screen
   limit 40 charactors, allow all letters, numbers,  and @_():/"'-=+$%#!.,;*&[]{}
+
+  V6.6 note:
+  high score can load/save from Supabase so all users see the same score
+  localStorage stays as the fallback if database is not available
 */
 
 :root {

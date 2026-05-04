@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V6.5
+    Hex Rush V6.6
     2026 eriselizabeth.com
-    Updated: 2026-05-03 16:13:42 -04:00
+    Updated: 2026-05-03 21:27:01 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -102,6 +102,10 @@
     - added if a person beats the high score, can enter their name in the loss screen
     - will be displayed on the loss screen under [high score]
     - limit 40 charactors, allow all letters, numbers,  and @_():/"'-=+$%#!.,;*&[]{}
+
+    V6.6 changes:
+    - high score can load/save from Supabase so all users see the same score
+    - localStorage stays as the fallback if database is not available
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -122,6 +126,10 @@
 
   const STORAGE_KEY = "hex-rush-best";
   const NAME_STORAGE_KEY = "hex-rush-best-name";
+  const SUPABASE_URL = "https://jurpddzoprhuboxyghau.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1cnBkZHpvcHJodWJveHlnaGF1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4NDcxNzUsImV4cCI6MjA5MzQyMzE3NX0.gAQAYN5Pizs5Hiet9hviGQ16Ph1MDif-uDs1mhFpJvA";
+  const SUPABASE_SCORE_ENDPOINT = `${SUPABASE_URL}/rest/v1/hex_rush_score`;
+  const SUPABASE_SCORE_ROW = 1;
   const NAME_ALLOWED_PATTERN = /[^A-Za-z0-9 @_():/"'\-=+$%#!.,;*&[\]{}]/g;
   const TAU = Math.PI * 2;
   const SPIN_SCALE = 0.07;
@@ -143,6 +151,7 @@
     score: 0,
     best: Number(localStorage.getItem(STORAGE_KEY) || 0),
     bestName: localStorage.getItem(NAME_STORAGE_KEY) || "",
+    usingRemoteScore: false,
     pendingHighScoreName: false,
     time: 0,
     passiveScoreTimer: PASSIVE_SCORE_START,
@@ -226,7 +235,7 @@
     const beatHighScore = state.score > state.best;
     if (beatHighScore) {
       state.best = state.score;
-      localStorage.setItem(STORAGE_KEY, String(state.best));
+      saveLocalHighScore();
       state.pendingHighScoreName = true;
     }
     centerScoreNode.textContent = state.score;
@@ -267,6 +276,56 @@
     centerScoreNode.textContent = state.score;
   }
 
+  function saveLocalHighScore() {
+    localStorage.setItem(STORAGE_KEY, String(state.best));
+    localStorage.setItem(NAME_STORAGE_KEY, state.bestName);
+  }
+
+  function supabaseHeaders() {
+    return {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation"
+    };
+  }
+
+  async function loadRemoteHighScore() {
+    try {
+      const response = await fetch(`${SUPABASE_SCORE_ENDPOINT}?id=eq.${SUPABASE_SCORE_ROW}&select=high_score,player_name`, {
+        headers: supabaseHeaders()
+      });
+      if (!response.ok) throw new Error("score load failed");
+      const rows = await response.json();
+      const row = rows[0];
+      if (!row) return;
+      state.best = Number(row.high_score || 0);
+      state.bestName = row.player_name || "";
+      state.usingRemoteScore = true;
+      saveLocalHighScore();
+    } catch {
+      state.usingRemoteScore = false;
+    }
+  }
+
+  async function saveRemoteHighScore() {
+    if (!state.usingRemoteScore) return;
+    try {
+      const response = await fetch(`${SUPABASE_SCORE_ENDPOINT}?id=eq.${SUPABASE_SCORE_ROW}&high_score=lt.${state.best}`, {
+        method: "PATCH",
+        headers: supabaseHeaders(),
+        body: JSON.stringify({
+          high_score: state.best,
+          player_name: state.bestName,
+          updated_at: new Date().toISOString()
+        })
+      });
+      if (!response.ok) throw new Error("score save failed");
+    } catch {
+      state.usingRemoteScore = false;
+    }
+  }
+
   function cleanHighScoreName(value) {
     return value.replace(NAME_ALLOWED_PATTERN, "").slice(0, 40);
   }
@@ -276,11 +335,12 @@
     const cleaned = cleanHighScoreName(nameInput.value);
     if (!cleaned) return;
     state.bestName = cleaned;
-    localStorage.setItem(NAME_STORAGE_KEY, state.bestName);
+    saveLocalHighScore();
     highScoreNameNode.textContent = state.bestName;
     highScoreNameNode.hidden = false;
     nameForm.hidden = true;
     state.pendingHighScoreName = false;
+    saveRemoteHighScore();
   }
 
   function passiveScoreInterval() {
@@ -917,5 +977,6 @@
   });
 
   resize();
+  loadRemoteHighScore();
   requestAnimationFrame(loop);
 })();

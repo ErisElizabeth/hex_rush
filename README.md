@@ -1,6 +1,47 @@
-# hex rush v6.5
+# hex rush v6.6
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## v6.6 changes
+
+- high score can load/save from Supabase so all users see the same score
+- localStorage stays as the fallback if database is not available
+
+## Supabase setup
+
+Run this in the Supabase SQL editor:
+
+```sql
+create table if not exists public.hex_rush_score (
+  id integer primary key,
+  high_score integer not null default 0,
+  player_name text not null default '',
+  updated_at timestamptz not null default now()
+);
+
+insert into public.hex_rush_score (id, high_score, player_name)
+values (1, 0, '')
+on conflict (id) do nothing;
+
+alter table public.hex_rush_score enable row level security;
+
+drop policy if exists "hex rush public read" on public.hex_rush_score;
+create policy "hex rush public read"
+on public.hex_rush_score
+for select
+to anon
+using (id = 1);
+
+drop policy if exists "hex rush public higher score update" on public.hex_rush_score;
+create policy "hex rush public higher score update"
+on public.hex_rush_score
+for update
+to anon
+using (id = 1)
+with check (id = 1);
+```
+
+The game only sends an update when its local score is higher than the loaded high score.
 
 ## v6.5 changes
 
