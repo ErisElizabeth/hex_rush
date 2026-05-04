@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V6.6
+    Hex Rush V6.7
     2026 eriselizabeth.com
-    Updated: 2026-05-03 21:27:01 -04:00
+    Updated: 2026-05-03 21:41:54 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -106,6 +106,10 @@
     V6.6 changes:
     - high score can load/save from Supabase so all users see the same score
     - localStorage stays as the fallback if database is not available
+
+    V6.7 changes:
+    - high score actively retreives from Supabase on load, play, loss, and after saving a name
+    - this should stop phone and desktop from living in two seperate high score worlds
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -221,8 +225,8 @@
     overlay.hidden = true;
   }
 
-  function endGame() {
-    // Save best score locally in this browser, then show the replay screen.
+  async function endGame() {
+    // V6.7: before deciding if this is a new high score, ask the database what it knows.
     if (document.pointerLockElement === canvas) {
       document.exitPointerLock();
     }
@@ -232,6 +236,7 @@
     if (state.activePointers.size > 0) {
       state.restartBlockedUntil = Infinity;
     }
+    await loadRemoteHighScore();
     const beatHighScore = state.score > state.best;
     if (beatHighScore) {
       state.best = state.score;
@@ -239,10 +244,8 @@
       state.pendingHighScoreName = true;
     }
     centerScoreNode.textContent = state.score;
-    highScoreNode.textContent = `high score: ${state.best}`;
     highScoreNode.hidden = false;
-    highScoreNameNode.textContent = state.bestName;
-    highScoreNameNode.hidden = !state.bestName;
+    updateHighScoreDisplay();
     nameForm.hidden = !beatHighScore;
     if (beatHighScore) {
       nameInput.value = "";
@@ -281,6 +284,12 @@
     localStorage.setItem(NAME_STORAGE_KEY, state.bestName);
   }
 
+  function updateHighScoreDisplay() {
+    highScoreNode.textContent = `high score: ${state.best}`;
+    highScoreNameNode.textContent = state.bestName;
+    highScoreNameNode.hidden = !state.bestName;
+  }
+
   function supabaseHeaders() {
     return {
       apikey: SUPABASE_ANON_KEY,
@@ -303,6 +312,9 @@
       state.bestName = row.player_name || "";
       state.usingRemoteScore = true;
       saveLocalHighScore();
+      if (state.gameOver || !highScoreNode.hidden) {
+        updateHighScoreDisplay();
+      }
     } catch {
       state.usingRemoteScore = false;
     }
@@ -321,6 +333,7 @@
         })
       });
       if (!response.ok) throw new Error("score save failed");
+      await loadRemoteHighScore();
     } catch {
       state.usingRemoteScore = false;
     }
@@ -336,8 +349,7 @@
     if (!cleaned) return;
     state.bestName = cleaned;
     saveLocalHighScore();
-    highScoreNameNode.textContent = state.bestName;
-    highScoreNameNode.hidden = false;
+    updateHighScoreDisplay();
     nameForm.hidden = true;
     state.pendingHighScoreName = false;
     saveRemoteHighScore();
@@ -974,6 +986,7 @@
       pointerPosition: pointerStart,
       lockPointer: useRelativePointer
     });
+    loadRemoteHighScore();
   });
 
   resize();

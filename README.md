@@ -1,6 +1,11 @@
-# hex rush v6.6
+# hex rush v6.7
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## v6.7 changes
+
+- high score actively retreives from Supabase on page load, play start, loss, and after saving a name
+- loss screen checks the shared database before deciding if this player beat the high score
 
 ## v6.6 changes
 
