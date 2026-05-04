@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <!--
-      Hex Rush V7.0
+      Hex Rush V7.2
       2026 eriselizabeth.com
-      Updated: 2026-05-03 22:07:20 -04:00
+      Updated: 2026-05-04 02:36:28 -04:00
 
       Main page shell for the game. I am keeping this pretty simple on purpose:
       canvas does the drawing, the HUD shows score stuff, and the overlay handles
@@ -115,11 +115,17 @@
 
       V7.0 note:
       added a sneaky little cheat for red hexagon hitboxes
+
+      V7.1 note:
+      music fades out when the user leaves and fades back in when they return
+
+      V7.2 note:
+      mobile high-score name entry is easier to see, with an enter button under the text box
     -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>hex rush</title>
-    <link rel="stylesheet" href="styles.css?v=7.0">
+    <link rel="stylesheet" href="styles.css?v=7.2">
   </head>
   <body>
     <main class="game-shell" aria-label="hex rush game">
@@ -139,8 +145,8 @@
         </div>
         <form id="nameForm" class="name-form" hidden>
           <label for="nameInput">new high score</label>
-          <input id="nameInput" type="text" maxlength="40" autocomplete="off" spellcheck="false">
-          <button id="saveNameButton" type="submit">save</button>
+          <input id="nameInput" type="text" maxlength="40" autocomplete="off" spellcheck="false" enterkeyhint="done">
+          <button id="saveNameButton" type="submit">enter</button>
         </form>
         <button id="startButton" type="button">play</button>
       </section>
@@ -151,6 +157,6 @@
     <audio id="introLostAudio" src="hex_audio_intro_lost.mp3" preload="auto"></audio>
     <audio id="loopLostAudio" src="hex_audio_loop_lost.ogg" preload="auto" loop></audio>
 
-    <script src="game.js?v=7.0"></script>
+    <script src="game.js?v=7.2"></script>
   </body>
 </html>

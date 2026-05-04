@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V7.0
+    Hex Rush V7.2
     2026 eriselizabeth.com
-    Updated: 2026-05-03 22:07:20 -04:00
+    Updated: 2026-05-04 02:36:28 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -122,6 +122,14 @@
     V7.0 changes:
     - sneaky little cheat: holding w + t turns off red hexagon hitboxes
     - not advertised in the game because that would ruin the sneaky part
+
+    V7.1 changes:
+    - music fades to 0 over 3 seconds when the user leaves/minimizes
+    - music fades back in over 3 seconds when the user comes back
+
+    V7.2 changes:
+    - mobile high-score name entry is easier to see
+    - save button now says enter and sits under the text box
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -157,6 +165,8 @@
   const PASSIVE_SCORE_START = 1;
   const PASSIVE_SCORE_INTERVAL = 5;
   const PASSIVE_SCORE_SPEEDUP = 0.9;
+  const MUSIC_VOLUME = 0.6;
+  const MUSIC_ATTENTION_FADE_SECONDS = 3;
   let lastButtonPointerType = "mouse";
 
   // Everything the game needs to remember lives here so I can find it again.
@@ -237,6 +247,7 @@
     nameForm.hidden = true;
     state.pendingHighScoreName = false;
     gameShell.classList.remove("is-lost");
+    gameShell.classList.remove("is-naming");
     overlay.hidden = true;
   }
 
@@ -264,7 +275,13 @@
     nameForm.hidden = !beatHighScore;
     if (beatHighScore) {
       nameInput.value = "";
-      setTimeout(() => nameInput.focus({ preventScroll: true }), 0);
+      gameShell.classList.add("is-naming");
+      setTimeout(() => {
+        nameInput.focus();
+        nameInput.scrollIntoView({ block: "center", inline: "nearest" });
+      }, 0);
+    } else {
+      gameShell.classList.remove("is-naming");
     }
     gameShell.classList.add("is-lost");
     overlay.querySelector("h1").textContent = "";
@@ -401,6 +418,7 @@
     saveLocalHighScore();
     updateHighScoreDisplay();
     nameForm.hidden = true;
+    gameShell.classList.remove("is-naming");
     state.pendingHighScoreName = false;
     saveRemoteHighScore();
   }
@@ -480,11 +498,48 @@
     let mode = "normal";
     let section = "intro";
     let sectionStart = 0;
+    let htmlVolume = MUSIC_VOLUME;
+    let htmlFadeId = 0;
+    let targetMasterVolume = MUSIC_VOLUME;
     let loaded = loadBuffers();
 
+    function setHtmlVolume(value) {
+      htmlVolume = value;
+      for (const trackMode of Object.keys(tracks)) {
+        tracks[trackMode].intro.volume = value;
+        tracks[trackMode].loop.volume = value;
+      }
+    }
+
+    function fadeHtmlVolume(targetVolume, seconds) {
+      window.clearInterval(htmlFadeId);
+      const startVolume = htmlVolume;
+      const startTime = performance.now();
+      const duration = Math.max(0.01, seconds) * 1000;
+
+      htmlFadeId = window.setInterval(() => {
+        const progress = Math.min(1, (performance.now() - startTime) / duration);
+        setHtmlVolume(startVolume + (targetVolume - startVolume) * progress);
+        if (progress >= 1) window.clearInterval(htmlFadeId);
+      }, 50);
+    }
+
+    function fadeForAttention(isAway) {
+      // V7.1: if the player leaves the tab, be polite and ease the music down/up.
+      const targetVolume = isAway ? 0 : MUSIC_VOLUME;
+      targetMasterVolume = targetVolume;
+      fadeHtmlVolume(targetVolume, MUSIC_ATTENTION_FADE_SECONDS);
+      if (master && context) {
+        const now = context.currentTime;
+        master.gain.cancelScheduledValues(now);
+        master.gain.setValueAtTime(master.gain.value, now);
+        master.gain.linearRampToValueAtTime(targetVolume, now + MUSIC_ATTENTION_FADE_SECONDS);
+      }
+    }
+
     for (const trackMode of Object.keys(tracks)) {
-      tracks[trackMode].intro.volume = 0.6;
-      tracks[trackMode].loop.volume = 0.6;
+      tracks[trackMode].intro.volume = htmlVolume;
+      tracks[trackMode].loop.volume = htmlVolume;
       tracks[trackMode].loop.loop = true;
       tracks[trackMode].intro.addEventListener("ended", () => {
         if (usingWebAudio || mode !== trackMode) return;
@@ -498,7 +553,7 @@
       try {
         context = new AudioContextClass();
         master = context.createGain();
-        master.gain.value = 0.6;
+        master.gain.value = targetMasterVolume;
         master.connect(context.destination);
 
         const entries = [
@@ -615,6 +670,7 @@
       usingWebAudio = false;
       pauseAllHtml();
       const element = tracks[trackMode][trackSection];
+      element.volume = htmlVolume;
       element.currentTime = Math.min(offset, Math.max(0, (element.duration || offset + 1) - 0.01));
       element.play().catch(() => {
         started = false;
@@ -678,7 +734,7 @@
       tracks[mode][section].play().catch(() => {});
     }
 
-    return { playNormal, lose, pause, resume };
+    return { playNormal, lose, pause, resume, fadeForAttention };
   }
 
   function spawn(type) {
@@ -1043,6 +1099,16 @@
       lockPointer: useRelativePointer
     });
     loadRemoteHighScore();
+  });
+
+  function updateMusicAttentionFade() {
+    music.fadeForAttention(document.hidden || !document.hasFocus());
+  }
+
+  document.addEventListener("visibilitychange", updateMusicAttentionFade);
+  window.addEventListener("blur", updateMusicAttentionFade);
+  window.addEventListener("focus", () => {
+    window.setTimeout(updateMusicAttentionFade, 0);
   });
 
   resize();

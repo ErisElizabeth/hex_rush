@@ -1,6 +1,18 @@
-# hex rush v7.0
+# hex rush v7.2
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## v7.2 changes
+
+- mobile high-score name entry is lifted into view better when the keyboard opens
+- name save button now says `enter` and sits under the text box
+- bumped cache tags to `?v=7.2`
+
+## v7.1 changes
+
+- music fades to volume `0` over 3 seconds when the tab/window loses focus
+- music fades back to normal volume over 3 seconds when the tab/window is active again
+- bumped cache tags to `?v=7.1`
 
 ## v7.0 changes
 

@@ -238,6 +238,11 @@ button:focus-visible {
   backdrop-filter: blur(8px) saturate(0.55);
 }
 
+.game-shell.is-lost.is-naming .overlay {
+  place-content: center;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
 .game-shell.is-lost .overlay h1,
 .game-shell.is-lost .overlay p {
   display: none;
@@ -246,8 +251,8 @@ button:focus-visible {
 .name-form {
   display: grid;
   justify-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .name-form[hidden] {
@@ -262,14 +267,19 @@ button:focus-visible {
 
 .name-form input {
   width: min(78vw, 420px);
-  min-height: 42px;
+  min-height: 48px;
   border: 1px solid rgba(245, 245, 245, 0.24);
   border-radius: 6px;
   background: rgba(10, 10, 10, 0.72);
   color: #f5f5f5;
   padding: 0 12px;
   font: inherit;
+  font-size: 1rem;
   text-align: center;
+}
+
+.name-form button {
+  margin-top: 2px;
 }
 
 .overlay h1 {
@@ -364,6 +374,26 @@ button:focus-visible {
 
   .game-shell.is-lost .overlay {
     padding-bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .game-shell.is-lost.is-naming .center-score-wrap {
+    padding-bottom: clamp(150px, 42vh, 230px);
+  }
+
+  .game-shell.is-lost.is-naming .overlay {
+    place-content: center;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+
+  .name-form {
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .name-form input {
+    width: min(86vw, 420px);
+    min-height: 46px;
+    font-size: 16px;
   }
 
   .overlay button {
