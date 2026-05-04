@@ -1,6 +1,10 @@
-# hex rush v7.6
+# hex rush v7.7
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## v7.7 changes
+
+- music fade in/out when leaving or returning to the tab is now `1.5` seconds instead of `3`
 
 ## v7.6 changes
 

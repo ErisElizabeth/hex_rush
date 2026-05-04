@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V7.6
+    Hex Rush V7.7
     2026 eriselizabeth.com
-    Updated: 2026-05-04 02:49:19 -04:00
+    Updated: 2026-05-04 08:55:08 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -146,6 +146,9 @@
     V7.6 changes:
     - fixed play button by moving music constants before the music controller starts
     - yes, this was one of those tiny-order-of-things JavaScript faceplants
+
+    V7.7 changes:
+    - music fade in/out is now 1.5 seconds instead of 3 seconds
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -162,7 +165,7 @@
   const nameForm = document.getElementById("nameForm");
   const nameInput = document.getElementById("nameInput");
   const MUSIC_VOLUME = 0.6;
-  const MUSIC_ATTENTION_FADE_SECONDS = 3;
+  const MUSIC_ATTENTION_FADE_SECONDS = 1.5;
   const introAudio = document.getElementById("introAudio");
   const loopAudio = document.getElementById("loopAudio");
   const introLostAudio = document.getElementById("introLostAudio");
