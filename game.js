@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V6.8
+    Hex Rush V6.9
     2026 eriselizabeth.com
-    Updated: 2026-05-03 21:47:08 -04:00
+    Updated: 2026-05-03 21:52:28 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -114,6 +114,10 @@
     V6.8 changes:
     - database high score/name now displays on the opening screen too
     - added console notes so I can see if Supabase is loading, saving, or failing
+
+    V6.9 changes:
+    - moved shared high score into the actual start screen overlay because behind the overlay was dumb, lol
+    - added clearer database status notes for when Supabase has no row or is blocked
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -123,6 +127,9 @@
   const highScoreNode = document.getElementById("highScore");
   const highScoreNameNode = document.getElementById("highScoreName");
   const overlay = document.getElementById("overlay");
+  const overlayHighScoreNode = document.getElementById("overlayHighScore");
+  const overlayHighScoreValueNode = document.getElementById("overlayHighScoreValue");
+  const overlayHighScoreNameNode = document.getElementById("overlayHighScoreName");
   const startButton = document.getElementById("startButton");
   const nameForm = document.getElementById("nameForm");
   const nameInput = document.getElementById("nameInput");
@@ -292,10 +299,16 @@
     highScoreNode.textContent = `high score: ${state.best}`;
     highScoreNameNode.textContent = state.bestName;
     highScoreNameNode.hidden = !state.bestName;
+    overlayHighScoreValueNode.textContent = `high score: ${state.best}`;
+    overlayHighScoreNameNode.textContent = state.bestName;
+    overlayHighScoreNameNode.hidden = !state.bestName;
   }
 
   function showHighScoreDisplay() {
-    highScoreNode.hidden = false;
+    if (state.gameOver) {
+      highScoreNode.hidden = false;
+    }
+    overlayHighScoreNode.hidden = false;
     updateHighScoreDisplay();
   }
 
@@ -316,7 +329,12 @@
       if (!response.ok) throw new Error("score load failed");
       const rows = await response.json();
       const row = rows[0];
-      if (!row) return;
+      if (!row) {
+        state.usingRemoteScore = false;
+        console.warn("[hex rush] Supabase connected, but row id 1 was not found in hex_rush_score");
+        showHighScoreDisplay();
+        return;
+      }
       state.best = Number(row.high_score || 0);
       state.bestName = row.player_name || "";
       state.usingRemoteScore = true;
@@ -339,8 +357,11 @@
 
   async function saveRemoteHighScore() {
     if (!state.usingRemoteScore) {
-      console.warn("[hex rush] Supabase save skipped because the database is not connected right now");
-      return;
+      await loadRemoteHighScore();
+      if (!state.usingRemoteScore) {
+        console.warn("[hex rush] Supabase save skipped because the database is not connected right now");
+        return;
+      }
     }
     try {
       const response = await fetch(`${SUPABASE_SCORE_ENDPOINT}?id=eq.${SUPABASE_SCORE_ROW}&high_score=lt.${state.best}`, {
