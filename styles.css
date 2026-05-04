@@ -199,7 +199,7 @@ button:focus-visible {
 .game-shell.is-lost .center-score {
   color: #f5f5f5;
   opacity: 0.34;
-  transform: scale(1.2);
+  transform: scale(0.8);
 }
 
 .game-shell.is-lost .center-score-wrap {
@@ -324,7 +324,7 @@ button:focus-visible {
   }
 
   .game-shell.is-lost .center-score {
-    transform: scale(1.12);
+    transform: scale(0.75);
   }
 
   .game-shell.is-lost .center-score-wrap {
