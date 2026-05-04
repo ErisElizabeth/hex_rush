@@ -1,8 +1,8 @@
 (() => {
   /*
-    Hex Rush V6.9
+    Hex Rush V7.0
     2026 eriselizabeth.com
-    Updated: 2026-05-03 21:52:28 -04:00
+    Updated: 2026-05-03 22:07:20 -04:00
 
     This is the main game file. It is intentionally plain JavaScript so it can
     be embedded on a website without a build step. I sorta know what I am doing:
@@ -118,6 +118,10 @@
     V6.9 changes:
     - moved shared high score into the actual start screen overlay because behind the overlay was dumb, lol
     - added clearer database status notes for when Supabase has no row or is blocked
+
+    V7.0 changes:
+    - sneaky little cheat: holding w + t turns off red hexagon hitboxes
+    - not advertised in the game because that would ruin the sneaky part
   */
 
   const canvas = document.getElementById("gameCanvas");
@@ -414,6 +418,11 @@
   function canClickRestart() {
     // V4.2: if game over happens while a finger is still down, ignore that old release/click.
     return performance.now() >= state.restartBlockedUntil;
+  }
+
+  function redHitboxesAreOff() {
+    // V7.0: sneaky cheat, both keys at once makes red hexagons pass through.
+    return state.keys.has("KeyW") && state.keys.has("KeyT");
   }
 
   function releasePointer(pointerId) {
@@ -812,6 +821,7 @@
 
       if (distance < entity.hitRadius + player.radius * 0.72) {
         if (entity.type === "hazard") {
+          if (redHitboxesAreOff()) continue;
           endGame();
           return;
         }

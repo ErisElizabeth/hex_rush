@@ -2,9 +2,9 @@
 <html lang="en">
   <head>
     <!--
-      Hex Rush V6.9
+      Hex Rush V7.0
       2026 eriselizabeth.com
-      Updated: 2026-05-03 21:52:28 -04:00
+      Updated: 2026-05-03 22:07:20 -04:00
 
       Main page shell for the game. I am keeping this pretty simple on purpose:
       canvas does the drawing, the HUD shows score stuff, and the overlay handles
@@ -112,11 +112,14 @@
       V6.9 note:
       moved shared high score into the actual start screen overlay because behind the overlay was dumb, lol
       added clearer database status notes for when Supabase has no row or is blocked
+
+      V7.0 note:
+      added a sneaky little cheat for red hexagon hitboxes
     -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>hex rush</title>
-    <link rel="stylesheet" href="styles.css?v=6.9">
+    <link rel="stylesheet" href="styles.css?v=7.0">
   </head>
   <body>
     <main class="game-shell" aria-label="hex rush game">
@@ -148,6 +151,6 @@
     <audio id="introLostAudio" src="hex_audio_intro_lost.mp3" preload="auto"></audio>
     <audio id="loopLostAudio" src="hex_audio_loop_lost.ogg" preload="auto" loop></audio>
 
-    <script src="game.js?v=6.9"></script>
+    <script src="game.js?v=7.0"></script>
   </body>
 </html>

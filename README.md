@@ -1,6 +1,11 @@
-# hex rush v6.9
+# hex rush v7.0
 
 A small embeddable HTML canvas game inspired by classic reflex Flash games. It uses only static files, so it can be hosted on most websites without a build step.
+
+## v7.0 changes
+
+- added a sneaky keyboard cheat: holding `w` + `t` turns off red hexagon hitboxes
+- bumped cache tags to `?v=7.0`
 
 ## v6.9 changes
 
